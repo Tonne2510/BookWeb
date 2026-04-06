@@ -1013,6 +1013,10 @@ const resolvers = {
     createReview: async (_, { bookId, rating, title, content, imageUrl, orderId }, { user }) => {
       if (!user) throw new Error('Not authenticated');
 
+      // Prevent duplicate reviews: one review per user per book
+      const existing = await Review.findOne({ where: { bookId, userId: user.id } });
+      if (existing) throw new Error('Bạn đã đánh giá sách này rồi');
+
       const review = await Review.create({
         bookId,
         userId: user.id,

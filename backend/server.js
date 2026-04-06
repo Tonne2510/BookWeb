@@ -33,6 +33,19 @@ const getAllowedOrigins = () => {
 
 const allowedOrigins = getAllowedOrigins();
 
+const ensureReviewStatusEnum = async () => {
+  try {
+    await db.query(
+      "ALTER TABLE `Reviews` MODIFY COLUMN `status` ENUM('approved','pending','rejected') NOT NULL DEFAULT 'pending'",
+    );
+    console.log("✅ Reviews.status ENUM updated");
+  } catch (error) {
+    const msg = (error.original?.message || error.message || "").toLowerCase();
+    if (msg.includes("approved")) return;
+    // Ignore if column definition is identical (no-op)
+  }
+};
+
 const ensureReviewImageColumn = async () => {
   try {
     await db.query(
@@ -336,6 +349,9 @@ db.authenticate()
   .then(() => {
     console.log("✅ Database connected successfully");
     return db.sync();
+  })
+  .then(() => {
+    return ensureReviewStatusEnum();
   })
   .then(() => {
     return ensureReviewImageColumn();
