@@ -310,9 +310,9 @@
                             <span th:if="${v.totalUsageLimit != null}" th:text="' / ' + ${v.totalUsageLimit}"></span>
                         </td>
                         <td>
-                            <small th:text="${v.startDate != null ? #strings.substring(v.startDate,0,10) : '-'}"></small>
+                            <small th:text="${v.startDateDisplay}"></small>
                             <small> - </small>
-                            <small th:text="${v.endDate != null ? #strings.substring(v.endDate,0,10) : '-'}"></small>
+                            <small th:text="${v.endDateDisplay}"></small>
                         </td>
                         <td>
                             <span th:if="${v.isActive}" class="badge bg-success">Kích hoạt</span>

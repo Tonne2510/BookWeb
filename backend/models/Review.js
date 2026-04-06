@@ -27,6 +27,10 @@ const Review = sequelize.define('Review', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  orderId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
   helpfulCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0

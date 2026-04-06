@@ -65,6 +65,44 @@ const ensureReviewImageColumn = async () => {
   }
 };
 
+const ensureReviewOrderColumns = async () => {
+  try {
+    await db.query(
+      "ALTER TABLE `Reviews` ADD COLUMN `orderId` CHAR(36) NULL",
+    );
+    console.log("✅ Added Reviews.orderId column");
+  } catch (error) {
+    if (
+      !(
+        error &&
+        (error.original?.code === "ER_DUP_FIELDNAME" ||
+          error.parent?.code === "ER_DUP_FIELDNAME")
+      )
+    ) {
+      throw error;
+    }
+  }
+
+  try {
+    await db.query(
+      "CREATE UNIQUE INDEX `reviews_user_book_order_unique` ON `Reviews` (`userId`, `bookId`, `orderId`)",
+    );
+    console.log("✅ Added unique index for Reviews(userId, bookId, orderId)");
+  } catch (error) {
+    if (
+      !(
+        error &&
+        (error.original?.code === "ER_DUP_KEYNAME" ||
+          error.parent?.code === "ER_DUP_KEYNAME" ||
+          error.original?.code === "ER_DUP_ENTRY" ||
+          error.parent?.code === "ER_DUP_ENTRY")
+      )
+    ) {
+      throw error;
+    }
+  }
+};
+
 const ensureOrderVoucherColumns = async () => {
   try {
     await db.query(
@@ -355,6 +393,9 @@ db.authenticate()
   })
   .then(() => {
     return ensureReviewImageColumn();
+  })
+  .then(() => {
+    return ensureReviewOrderColumns();
   })
   .then(() => {
     return ensureOrderVoucherColumns();

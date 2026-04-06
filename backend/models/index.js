@@ -34,6 +34,8 @@ Order.hasMany(OrderItem, { foreignKey: 'orderId', onDelete: 'CASCADE' });
 OrderItem.belongsTo(Order, { foreignKey: 'orderId' });
 OrderItem.belongsTo(Book, { foreignKey: 'bookId' });
 Book.hasMany(OrderItem, { foreignKey: 'bookId', onDelete: 'RESTRICT' });
+Order.hasMany(Review, { foreignKey: 'orderId', onDelete: 'SET NULL' });
+Review.belongsTo(Order, { foreignKey: 'orderId' });
 
 // Favorite associations
 User.hasMany(Favorite, { foreignKey: 'userId', onDelete: 'CASCADE' });

@@ -14,6 +14,7 @@ public class OrderItemDTO {
     private Integer quantity;
     private Double price;
     private Double discount;
+    private Boolean reviewed;
     private BookDTO book;
     private String bookId;
     private String bookTitle;

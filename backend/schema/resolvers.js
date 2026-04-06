@@ -1013,13 +1013,44 @@ const resolvers = {
     createReview: async (_, { bookId, rating, title, content, imageUrl, orderId }, { user }) => {
       if (!user) throw new Error('Not authenticated');
 
-      // Prevent duplicate reviews: one review per user per book
-      const existing = await Review.findOne({ where: { bookId, userId: user.id } });
-      if (existing) throw new Error('Bạn đã đánh giá sách này rồi');
+      let order = null;
+      let shouldAwardOrderVoucher = false;
+
+      if (orderId) {
+        order = await Order.findByPk(orderId, {
+          include: [{ model: OrderItem }]
+        });
+
+        if (!order) throw new Error('Đơn hàng không tồn tại');
+        if (order.userId !== user.id) throw new Error('Không có quyền đánh giá đơn hàng này');
+        if (!['delivered', 'confirmed'].includes(order.status)) {
+          throw new Error('Chỉ có thể đánh giá đơn hàng đã giao hoặc đã xác nhận');
+        }
+
+        const orderHasBook = (order.OrderItems || []).some((item) => String(item.bookId) === String(bookId));
+        if (!orderHasBook) {
+          throw new Error('Sản phẩm này không thuộc đơn hàng đã chọn');
+        }
+
+        // One review per purchased book in each order
+        const existingInOrder = await Review.findOne({
+          where: {
+            bookId,
+            userId: user.id,
+            orderId
+          }
+        });
+        if (existingInOrder) throw new Error('Bạn đã đánh giá sản phẩm này trong đơn hàng này rồi');
+      } else {
+        // Fallback for flows without orderId: keep one-review-per-book rule
+        const existing = await Review.findOne({ where: { bookId, userId: user.id, orderId: null } });
+        if (existing) throw new Error('Bạn đã đánh giá sách này rồi');
+      }
 
       const review = await Review.create({
         bookId,
         userId: user.id,
+        orderId: orderId || null,
         rating,
         title,
         content,
@@ -1034,11 +1065,33 @@ const resolvers = {
         await Book.update({ rating: Math.round(avg * 10) / 10 }, { where: { id: bookId } });
       }
 
-      // If orderId provided, auto-confirm the order and mark as reviewed
-      if (orderId) {
-        const order = await Order.findByPk(orderId);
-        if (order && order.userId === user.id && ['delivered', 'confirmed'].includes(order.status)) {
-          await order.update({ status: 'confirmed', reviewed: true });
+      // If reviewing from order flow, auto-confirm delivered order and update reviewed flag per purchased book
+      if (orderId && order) {
+        if (order.status === 'delivered') {
+          await order.update({ status: 'confirmed' });
+          shouldAwardOrderVoucher = true;
+        }
+
+        const itemBookIds = Array.from(new Set((order.OrderItems || []).map((item) => String(item.bookId))));
+        let fullyReviewed = false;
+        if (itemBookIds.length > 0) {
+          const reviewedRows = await Review.findAll({
+            where: {
+              userId: user.id,
+              orderId,
+              bookId: { [Op.in]: itemBookIds }
+            },
+            attributes: ['bookId']
+          });
+          const reviewedBookIds = new Set(reviewedRows.map((r) => String(r.bookId)));
+          fullyReviewed = itemBookIds.every((id) => reviewedBookIds.has(String(id)));
+        }
+        await order.update({ reviewed: fullyReviewed });
+
+        if (shouldAwardOrderVoucher) {
+          await awardMilestoneVoucherIfEligible(user.id, 'order', {
+            confirmedOrderAmount: Number(order.totalPrice || 0)
+          });
         }
       }
 
@@ -1419,6 +1472,7 @@ const resolvers = {
   Review: {
     user: (parent) => parent.User || null,
     book: (parent) => parent.Book || null,
+    orderId: (parent) => (parent.orderId ? String(parent.orderId) : null),
     createdAt: (parent) => parent.createdAt instanceof Date ? parent.createdAt.toISOString() : (parent.createdAt ? String(parent.createdAt) : null),
     updatedAt: (parent) => parent.updatedAt instanceof Date ? parent.updatedAt.toISOString() : (parent.updatedAt ? String(parent.updatedAt) : null)
   },
@@ -1432,7 +1486,38 @@ const resolvers = {
 
   OrderItem: {
     book: (parent) => parent.Book || null,
-    order: (parent) => parent.Order || null
+    order: (parent) => parent.Order || null,
+    isReviewed: async (parent, _, { user }) => {
+      if (!user) return false;
+      const reviewed = await Review.findOne({
+        where: {
+          userId: user.id,
+          orderId: parent.orderId,
+          bookId: parent.bookId
+        },
+        attributes: ['id']
+      });
+      return !!reviewed;
+    }
+  },
+
+  Voucher: {
+    startDate: (parent) => {
+      if (parent.startDate instanceof Date) return parent.startDate.toISOString();
+      return parent.startDate != null ? String(parent.startDate) : null;
+    },
+    endDate: (parent) => {
+      if (parent.endDate instanceof Date) return parent.endDate.toISOString();
+      return parent.endDate != null ? String(parent.endDate) : null;
+    },
+    createdAt: (parent) => {
+      if (parent.createdAt instanceof Date) return parent.createdAt.toISOString();
+      return parent.createdAt != null ? String(parent.createdAt) : null;
+    },
+    updatedAt: (parent) => {
+      if (parent.updatedAt instanceof Date) return parent.updatedAt.toISOString();
+      return parent.updatedAt != null ? String(parent.updatedAt) : null;
+    }
   },
 
   Favorite: {

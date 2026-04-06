@@ -232,6 +232,8 @@ public class OrderService {
                     lastName
                   }
                   items {
+                    id
+                    reviewed: isReviewed
                     quantity
                     book {
                       id
@@ -291,6 +293,8 @@ public class OrderService {
                     lastName
                   }
                   items {
+                    id
+                    reviewed: isReviewed
                     quantity
                     book {
                       id

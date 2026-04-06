@@ -131,6 +131,7 @@ const typeDefs = gql`
     title: String
     content: String!
     imageUrl: String
+    orderId: ID
     helpfulCount: Int
     status: ReviewStatus!
     user: User!
@@ -166,6 +167,7 @@ const typeDefs = gql`
     quantity: Int!
     price: Float!
     discount: Float
+    isReviewed: Boolean!
     book: Book!
     order: Order!
   }
