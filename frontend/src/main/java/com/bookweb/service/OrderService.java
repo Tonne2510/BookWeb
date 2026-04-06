@@ -275,6 +275,64 @@ public class OrderService {
         return orderList;
     }
 
+    public List<OrderDTO> getMyOrders(String token) throws Exception {
+        String query = """
+            query GetMyOrders($page: Int, $limit: Int) {
+              orders(page: $page, limit: $limit) {
+                orders {
+                  id
+                  orderNumber
+                  totalPrice
+                  status
+                  reviewed
+                  user {
+                    id
+                    firstName
+                    lastName
+                  }
+                  items {
+                    quantity
+                    book {
+                      id
+                      title
+                    }
+                  }
+                  createdAt
+                }
+                total
+                pages
+              }
+            }
+        """;
+
+        JsonObject variables = new JsonObject();
+        variables.addProperty("page", 1);
+        variables.addProperty("limit", 200);
+
+        JsonObject response = graphQLService.executeQuery(query, variables, token);
+
+        if (response.has("errors") && !response.get("errors").isJsonNull()) {
+            var errors = response.getAsJsonArray("errors");
+            if (errors.size() > 0) {
+                String errorMessage = errors.get(0).getAsJsonObject().get("message").getAsString();
+                throw new Exception("GraphQL Error: " + errorMessage);
+            }
+        }
+
+        if (!response.has("data") || response.get("data").isJsonNull()) {
+            throw new Exception("No data returned from GraphQL");
+        }
+
+        JsonArray orders = response.getAsJsonObject("data").getAsJsonObject("orders").getAsJsonArray("orders");
+
+        List<OrderDTO> orderList = new ArrayList<>();
+        orders.forEach(order -> {
+            orderList.add(gson.fromJson(order, OrderDTO.class));
+        });
+
+        return orderList;
+    }
+
     public boolean hasUserPurchasedAndDelivered(String bookId, String token) {
         try {
             String query = """

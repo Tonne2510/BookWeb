@@ -322,19 +322,24 @@ public class AuthController {
 
     @GetMapping("/orders")
     public String myOrders(Model model) {
-        try {
-            String token = TokenUtil.getTokenFromRequest();
-            if (token == null) {
-                return "redirect:/auth/login";
-            }
+        String token = TokenUtil.getTokenFromRequest();
+        if (token == null) {
+            return "redirect:/auth/login";
+        }
 
-            UserDTO user = authService.getMe(token);
-            java.util.List<OrderDTO> orders = orderService.getUserOrders(user.getId(), token);
+        try {
+            java.util.List<OrderDTO> orders = orderService.getMyOrders(token);
             model.addAttribute("orders", orders);
-            model.addAttribute("user", user);
             return "auth/orders";
         } catch (Exception e) {
-            return "redirect:/auth/login";
+            String message = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+            if (message.contains("not authenticated") || message.contains("unauthorized") || message.contains("jwt")) {
+                return "redirect:/auth/login";
+            }
+            model.addAttribute("orders", java.util.Collections.emptyList());
+            model.addAttribute("error", "Không thể tải đơn hàng lúc này. Vui lòng thử lại sau.");
+            logger.error("Failed to load user orders", e);
+            return "auth/orders";
         }
     }
 
