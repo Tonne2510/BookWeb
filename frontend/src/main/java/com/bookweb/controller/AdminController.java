@@ -629,11 +629,17 @@ public class AdminController {
             @RequestParam String name,
             @RequestParam(required = false) String description,
             @RequestParam String type,
+            @RequestParam(required = false, defaultValue = "code") String distributionType,
             @RequestParam Double value,
             @RequestParam(required = false, defaultValue = "0") Double minOrderValue,
             @RequestParam(required = false) Double maxDiscount,
             @RequestParam(required = false) Integer totalUsageLimit,
             @RequestParam(required = false, defaultValue = "1") Integer perUserLimit,
+            @RequestParam(required = false, defaultValue = "amount") String giftConditionType,
+            @RequestParam(required = false) Double minGiftAmount,
+            @RequestParam(required = false) Double maxGiftAmount,
+            @RequestParam(required = false) Integer minGiftReviewCount,
+            @RequestParam(required = false) Integer maxGiftReviewCount,
             @RequestParam String startDate,
             @RequestParam String endDate,
             RedirectAttributes redirectAttributes) {
@@ -646,11 +652,25 @@ public class AdminController {
             payload.put("name", name);
             payload.put("description", description);
             payload.put("type", type);
+            payload.put("distributionType", distributionType);
             payload.put("value", value);
             payload.put("minOrderValue", minOrderValue);
             payload.put("maxDiscount", maxDiscount);
             payload.put("totalUsageLimit", totalUsageLimit);
             payload.put("perUserLimit", perUserLimit);
+            payload.put("giftConditionType", giftConditionType);
+            if (minGiftAmount != null) {
+                payload.put("minGiftAmount", minGiftAmount);
+            }
+            if (maxGiftAmount != null) {
+                payload.put("maxGiftAmount", maxGiftAmount);
+            }
+            if (minGiftReviewCount != null) {
+                payload.put("minGiftReviewCount", minGiftReviewCount);
+            }
+            if (maxGiftReviewCount != null) {
+                payload.put("maxGiftReviewCount", maxGiftReviewCount);
+            }
             payload.put("startDate", startDate);
             payload.put("endDate", endDate);
 

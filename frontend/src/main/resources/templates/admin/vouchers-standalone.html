@@ -65,27 +65,43 @@
 
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
-                    <strong><i class="fas fa-plus-circle me-2"></i>Tao Voucher Moi</strong>
+                    <strong><i class="fas fa-plus-circle me-2"></i>Tạo Voucher Mới</strong>
                 </div>
                 <div class="card-body">
                     <form method="post" action="/admin/vouchers/create" class="row g-3">
-                        <div class="col-md-3"><label class="form-label">Ma voucher</label><input name="code" class="form-control" required></div>
-                        <div class="col-md-3"><label class="form-label">Ten voucher</label><input name="name" class="form-control" required></div>
-                        <div class="col-md-2"><label class="form-label">Loai</label>
+                        <div class="col-md-3"><label class="form-label">Mã voucher</label><input name="code" class="form-control" required></div>
+                        <div class="col-md-3"><label class="form-label">Tên voucher</label><input name="name" class="form-control" required></div>
+                        <div class="col-md-2"><label class="form-label">Loại giảm</label>
                             <select name="type" class="form-select" required>
-                                <option value="percent">Phan tram (%)</option>
-                                <option value="fixed">Tien co dinh</option>
+                                <option value="percent">Phần trăm (%)</option>
+                                <option value="fixed">Tiền cố định</option>
                             </select>
                         </div>
-                        <div class="col-md-2"><label class="form-label">Gia tri</label><input name="value" type="number" step="0.01" class="form-control" required></div>
-                        <div class="col-md-2"><label class="form-label">Don toi thieu</label><input name="minOrderValue" type="number" step="0.01" class="form-control" value="0"></div>
-                        <div class="col-md-2"><label class="form-label">Giam toi da</label><input name="maxDiscount" type="number" step="0.01" class="form-control"></div>
-                        <div class="col-md-2"><label class="form-label">Gioi han tong</label><input name="totalUsageLimit" type="number" class="form-control"></div>
-                        <div class="col-md-2"><label class="form-label">Gioi han/user</label><input name="perUserLimit" type="number" class="form-control" value="1"></div>
-                        <div class="col-md-3"><label class="form-label">Bat dau</label><input name="startDate" type="datetime-local" class="form-control" required></div>
-                        <div class="col-md-3"><label class="form-label">Ket thuc</label><input name="endDate" type="datetime-local" class="form-control" required></div>
-                        <div class="col-md-6"><label class="form-label">Mo ta</label><input name="description" class="form-control"></div>
-                        <div class="col-12"><button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Tao voucher</button></div>
+                        <div class="col-md-2"><label class="form-label">Kiểu voucher</label>
+                            <select name="distributionType" id="distributionType" class="form-select" required>
+                                <option value="code">Voucher mã</option>
+                                <option value="gift">Voucher tặng</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2"><label class="form-label">Giá trị</label><input name="value" type="number" step="0.01" class="form-control" required></div>
+                        <div class="col-md-2"><label class="form-label">Đơn tối thiểu</label><input name="minOrderValue" type="number" step="0.01" class="form-control" value="0"></div>
+                        <div class="col-md-2"><label class="form-label">Giảm tối đa</label><input name="maxDiscount" type="number" step="0.01" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">Giới hạn tổng</label><input name="totalUsageLimit" type="number" class="form-control"></div>
+                        <div class="col-md-2"><label class="form-label">Giới hạn/user</label><input name="perUserLimit" type="number" class="form-control" value="1"></div>
+                        <div class="col-md-2 gift-field"><label class="form-label">Điều kiện tặng</label>
+                            <select name="giftConditionType" id="giftConditionType" class="form-select">
+                                <option value="amount">Theo giá trị mua</option>
+                                <option value="review">Theo số đánh giá</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 gift-field gift-amount"><label class="form-label">Tối thiểu đơn hàng (VND)</label><input name="minGiftAmount" type="number" step="0.01" class="form-control" placeholder="0"></div>
+                        <div class="col-md-2 gift-field gift-amount"><label class="form-label">Tối đa đơn hàng (VND)</label><input name="maxGiftAmount" type="number" step="0.01" class="form-control" placeholder="Không giới hạn"></div>
+                        <div class="col-md-2 gift-field gift-review"><label class="form-label">Tối thiểu đánh giá</label><input name="minGiftReviewCount" type="number" class="form-control" placeholder="0"></div>
+                        <div class="col-md-2 gift-field gift-review"><label class="form-label">Tối đa đánh giá</label><input name="maxGiftReviewCount" type="number" class="form-control" placeholder="Không giới hạn"></div>
+                        <div class="col-md-3"><label class="form-label">Bắt đầu</label><input name="startDate" type="datetime-local" class="form-control" required></div>
+                        <div class="col-md-3"><label class="form-label">Kết thúc</label><input name="endDate" type="datetime-local" class="form-control" required></div>
+                        <div class="col-md-6"><label class="form-label">Mô tả</label><input name="description" class="form-control"></div>
+                        <div class="col-12"><button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Tạo voucher</button></div>
                     </form>
                 </div>
             </div>
@@ -94,15 +110,17 @@
                 <table class="table table-hover">
                     <thead>
                     <tr>
-                        <th>Ma</th>
-                        <th>Ten</th>
-                        <th>Loai</th>
-                        <th>Gia tri</th>
-                        <th>Don toi thieu</th>
-                        <th>Da dung</th>
-                        <th>Hieu luc</th>
-                        <th>Trang thai</th>
-                        <th>Hanh dong</th>
+                        <th>Mã</th>
+                        <th>Tên</th>
+                        <th>Loại</th>
+                        <th>Kiểu</th>
+                        <th>Giá trị</th>
+                        <th>Mốc tặng</th>
+                        <th>Đơn tối thiểu</th>
+                        <th>Đã dùng</th>
+                        <th>Hiệu lực</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -110,16 +128,36 @@
                         <td><strong th:text="${v.code}"></strong></td>
                         <td th:text="${v.name}"></td>
                         <td>
-                            <span th:if="${v.type == 'percent'}">Phan tram</span>
-                            <span th:unless="${v.type == 'percent'}">Co dinh</span>
+                            <span th:if="${v.type == 'percent'}">Phần trăm</span>
+                            <span th:unless="${v.type == 'percent'}">Cố định</span>
+                        </td>
+                        <td>
+                            <span th:if="${v.distributionType == 'gift'}" class="badge bg-info">Voucher tặng</span>
+                            <span th:unless="${v.distributionType == 'gift'}" class="badge bg-dark">Voucher mã</span>
                         </td>
                         <td>
                             <span th:if="${v.type == 'percent'}" th:text="${v.value + '%'}"></span>
                             <span th:unless="${v.type == 'percent'}" th:text="'VND ' + ${#numbers.formatInteger(v.value, 0)}"></span>
                         </td>
+                        <td>
+                            <div th:if="${v.distributionType == 'gift'}">
+                                <div th:if="${v.giftConditionType == 'review'}">
+                                    <small>Đánh giá: từ <span th:text="${v.minGiftReviewCount != null ? v.minGiftReviewCount : 0}"></span></small>
+                                    <small th:if="${v.maxGiftReviewCount != null}"> đến <span th:text="${v.maxGiftReviewCount}"></span></small>
+                                    <small th:unless="${v.maxGiftReviewCount != null}"> trở lên</small>
+                                </div>
+                                <div th:unless="${v.giftConditionType == 'review'}">
+                                    <small>Đơn hàng: từ <span th:text="'VND ' + ${#numbers.formatInteger(v.minGiftAmount != null ? v.minGiftAmount : 0, 0)}"></span></small>
+                                    <small th:if="${v.maxGiftAmount != null}"> đến <span th:text="'VND ' + ${#numbers.formatInteger(v.maxGiftAmount, 0)}"></span></small>
+                                    <small th:unless="${v.maxGiftAmount != null}"> trở lên</small>
+                                </div>
+                            </div>
+                            <div th:unless="${v.distributionType == 'gift'}"><small>-</small></div>
+                        </td>
                         <td th:text="'VND ' + ${#numbers.formatInteger(v.minOrderValue != null ? v.minOrderValue : 0, 0)}"></td>
                         <td>
-                            <span th:text="${v.usedCount != null ? v.usedCount : 0}"></span>
+                            <span th:if="${v.distributionType == 'gift'}" th:text="${v.giftedCount != null ? v.giftedCount : 0}"></span>
+                            <span th:unless="${v.distributionType == 'gift'}" th:text="${v.usedCount != null ? v.usedCount : 0}"></span>
                             <span th:if="${v.totalUsageLimit != null}" th:text="' / ' + ${v.totalUsageLimit}"></span>
                         </td>
                         <td>
@@ -128,14 +166,14 @@
                             <small th:text="${v.endDate != null ? #strings.substring(v.endDate,0,10) : '-'}"></small>
                         </td>
                         <td>
-                            <span th:if="${v.isActive}" class="badge bg-success">Active</span>
-                            <span th:unless="${v.isActive}" class="badge bg-secondary">Inactive</span>
+                            <span th:if="${v.isActive}" class="badge bg-success">Kích hoạt</span>
+                            <span th:unless="${v.isActive}" class="badge bg-secondary">Không kích hoạt</span>
                         </td>
                         <td>
                             <form th:action="@{/admin/vouchers/toggle/{id}(id=${v.id})}" method="post" style="display:inline;">
                                 <button class="btn btn-sm btn-warning" type="submit"><i class="fas fa-power-off"></i></button>
                             </form>
-                            <form th:action="@{/admin/vouchers/delete/{id}(id=${v.id})}" method="post" style="display:inline;" onsubmit="return confirm('Delete this voucher?')">
+                            <form th:action="@{/admin/vouchers/delete/{id}(id=${v.id})}" method="post" style="display:inline;" onsubmit="return confirm('Xóa voucher này?')">
                                 <button class="btn btn-sm btn-danger" type="submit"><i class="fas fa-trash"></i></button>
                             </form>
                         </td>
@@ -143,11 +181,69 @@
                     </tbody>
                 </table>
             </div>
-            <div th:unless="${vouchers != null and !vouchers.isEmpty()}" class="alert alert-info">Chua co voucher nao.</div>
+            <div th:unless="${vouchers != null and !vouchers.isEmpty()}" class="alert alert-info">Chưa có voucher nào.</div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        const distribution = document.getElementById('distributionType');
+        const giftConditionType = document.getElementById('giftConditionType');
+        const giftWrappers = document.querySelectorAll('.gift-field');
+        const giftInputs = document.querySelectorAll('.gift-field input');
+        const amountWrappers = document.querySelectorAll('.gift-amount');
+        const reviewWrappers = document.querySelectorAll('.gift-review');
+        const amountInputs = document.querySelectorAll('.gift-amount input');
+        const reviewInputs = document.querySelectorAll('.gift-review input');
+
+        function syncGiftConditionFields() {
+            const condition = giftConditionType ? giftConditionType.value : 'amount';
+            const showAmount = condition === 'amount';
+
+            amountWrappers.forEach(function (el) {
+                el.style.display = showAmount ? '' : 'none';
+            });
+            reviewWrappers.forEach(function (el) {
+                el.style.display = showAmount ? 'none' : '';
+            });
+
+            amountInputs.forEach(function (input, index) {
+                input.required = showAmount && index === 0;
+            });
+            reviewInputs.forEach(function (input, index) {
+                input.required = !showAmount && index === 0;
+            });
+        }
+
+        function syncGiftFields() {
+            const isGift = distribution && distribution.value === 'gift';
+            giftWrappers.forEach(function (el) {
+                el.style.display = isGift ? '' : 'none';
+            });
+            if (giftConditionType) {
+                giftConditionType.required = isGift;
+            }
+            giftInputs.forEach(function (input) {
+                if (!isGift) {
+                    input.required = false;
+                }
+            });
+
+            if (isGift) {
+                syncGiftConditionFields();
+            }
+        }
+
+        if (distribution) {
+            distribution.addEventListener('change', syncGiftFields);
+            if (giftConditionType) {
+                giftConditionType.addEventListener('change', syncGiftConditionFields);
+            }
+            syncGiftFields();
+        }
+    })();
+</script>
 </body>
 </html>

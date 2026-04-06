@@ -71,6 +71,62 @@ const ensureOrderVoucherColumns = async () => {
   }
 };
 
+const ensureVoucherGiftColumns = async () => {
+  const alterStatements = [
+    'ALTER TABLE `Vouchers` ADD COLUMN `userId` CHAR(36) NULL',
+    'ALTER TABLE `Vouchers` ADD COLUMN `distributionType` ENUM(\'code\',\'gift\') NOT NULL DEFAULT \'code\'',
+    'ALTER TABLE `Vouchers` ADD COLUMN `giftSource` VARCHAR(255) NULL',
+    'ALTER TABLE `Vouchers` ADD COLUMN `giftConditionType` ENUM(\'amount\',\'review\') NULL',
+    'ALTER TABLE `Vouchers` ADD COLUMN `minGiftAmount` DECIMAL(10,2) NULL',
+    'ALTER TABLE `Vouchers` ADD COLUMN `maxGiftAmount` DECIMAL(10,2) NULL',
+    'ALTER TABLE `Vouchers` ADD COLUMN `minGiftReviewCount` INT NULL',
+    'ALTER TABLE `Vouchers` ADD COLUMN `maxGiftReviewCount` INT NULL',
+    'ALTER TABLE `Vouchers` ADD COLUMN `giftedCount` INT NOT NULL DEFAULT 0',
+    'ALTER TABLE `Vouchers` ADD COLUMN `giftedBySystem` TINYINT(1) NOT NULL DEFAULT 0',
+    'ALTER TABLE `Vouchers` ADD COLUMN `sourceTemplateId` CHAR(36) NULL'
+  ];
+
+  for (const sql of alterStatements) {
+    try {
+      await db.query(sql);
+    } catch (error) {
+      if (!(error && (error.original?.code === 'ER_DUP_FIELDNAME' || error.parent?.code === 'ER_DUP_FIELDNAME'))) {
+        throw error;
+      }
+    }
+  }
+
+  // Drop old columns if they exist
+  const dropStatements = [
+    'ALTER TABLE `Vouchers` DROP COLUMN IF EXISTS `rewardTier`',
+    'ALTER TABLE `Vouchers` DROP COLUMN IF EXISTS `triggerOrderAmount`',
+    'ALTER TABLE `Vouchers` DROP COLUMN IF EXISTS `triggerReviewCount`'
+  ];
+
+  for (const sql of dropStatements) {
+    try {
+      await db.query(sql);
+    } catch (error) {
+      // Ignore errors for columns that don't exist
+    }
+  }
+};
+
+const ensureVoucherRecipientsTable = async () => {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS \`VoucherRecipients\` (
+      \`id\` CHAR(36) NOT NULL,
+      \`source\` VARCHAR(255) NULL,
+      \`createdAt\` DATETIME NOT NULL,
+      \`updatedAt\` DATETIME NOT NULL,
+      \`voucherId\` CHAR(36) NOT NULL,
+      \`userId\` CHAR(36) NOT NULL,
+      PRIMARY KEY (\`id\`),
+      UNIQUE KEY \`voucher_recipients_unique\` (\`voucherId\`, \`userId\`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+};
+
 // Middleware
 app.use(
   cors({
@@ -210,14 +266,24 @@ const startServer = async () => {
 // Database Connection
 db.authenticate()
   .then(() => {
+<<<<<<< HEAD
     console.log("✅ Database connected successfully");
+=======
+    console.log('✅ Database connected successfully');
+    return db.sync();
+  })
+  .then(() => {
+>>>>>>> 4620dad7640c4c94fd9f5ca537628b4e6bf40560
     return ensureReviewImageColumn();
   })
   .then(() => {
     return ensureOrderVoucherColumns();
   })
   .then(() => {
-    return db.sync();
+    return ensureVoucherGiftColumns();
+  })
+  .then(() => {
+    return ensureVoucherRecipientsTable();
   })
   .then(() => {
     startServer();

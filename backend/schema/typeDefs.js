@@ -46,6 +46,16 @@ const typeDefs = gql`
     fixed
   }
 
+  enum VoucherDistributionType {
+    code
+    gift
+  }
+
+  enum GiftConditionType {
+    amount
+    review
+  }
+
   type User {
     id: ID!
     email: String!
@@ -170,18 +180,29 @@ const typeDefs = gql`
   type Voucher {
     id: ID!
     code: String!
+    userId: ID
     name: String!
     description: String
     type: VoucherType!
+    distributionType: VoucherDistributionType!
     value: Float!
     minOrderValue: Float
     maxDiscount: Float
     totalUsageLimit: Int
     usedCount: Int
+    giftedCount: Int
     perUserLimit: Int
     startDate: String!
     endDate: String!
     isActive: Boolean!
+    giftSource: String
+    giftConditionType: GiftConditionType
+    minGiftAmount: Float
+    maxGiftAmount: Float
+    minGiftReviewCount: Int
+    maxGiftReviewCount: Int
+    giftedBySystem: Boolean
+    sourceTemplateId: ID
     createdAt: String!
     updatedAt: String!
   }
@@ -294,6 +315,9 @@ const typeDefs = gql`
 
     # Vouchers
     vouchers(page: Int, limit: Int, isActive: Boolean, searchTerm: String): [Voucher!]!
+    publicCodeVouchers(subtotal: Float): [Voucher!]!
+    myVouchers(subtotal: Float): [Voucher!]!
+    myGiftVouchers(subtotal: Float): [Voucher!]!
     validateVoucher(code: String!, subtotal: Float!): VoucherValidation!
 
     # Orders
@@ -425,11 +449,17 @@ const typeDefs = gql`
       name: String!
       description: String
       type: VoucherType!
+      distributionType: VoucherDistributionType
       value: Float!
       minOrderValue: Float
       maxDiscount: Float
       totalUsageLimit: Int
       perUserLimit: Int
+      giftConditionType: GiftConditionType
+      minGiftAmount: Float
+      maxGiftAmount: Float
+      minGiftReviewCount: Int
+      maxGiftReviewCount: Int
       startDate: String!
       endDate: String!
       isActive: Boolean
@@ -439,11 +469,17 @@ const typeDefs = gql`
       name: String
       description: String
       type: VoucherType
+      distributionType: VoucherDistributionType
       value: Float
       minOrderValue: Float
       maxDiscount: Float
       totalUsageLimit: Int
       perUserLimit: Int
+      giftConditionType: GiftConditionType
+      minGiftAmount: Float
+      maxGiftAmount: Float
+      minGiftReviewCount: Int
+      maxGiftReviewCount: Int
       startDate: String
       endDate: String
       isActive: Boolean

@@ -4,6 +4,7 @@ import com.bookweb.service.CartService;
 import com.bookweb.service.AuthService;
 import com.bookweb.service.OrderService;
 import com.bookweb.service.VoucherService;
+import com.bookweb.model.VoucherDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,6 +17,8 @@ import java.util.*;
 @Controller
 @RequestMapping("/cart")
 public class CartController {
+
+    private static final String APPLIED_VOUCHER_CODE_SESSION_KEY = "appliedVoucherCode";
 
     @Autowired
     private CartService cartService;
@@ -35,10 +38,34 @@ public class CartController {
     @GetMapping
     public String viewCart(HttpSession session, Model model) {
         Map<String, Object> cart = cartService.getCart(session);
+        double subtotal = extractCartSubtotal(cart);
+
+        String token = com.bookweb.util.TokenUtil.getTokenFromRequest();
+        List<VoucherDTO> giftVouchers = new ArrayList<>();
+        List<VoucherDTO> publicCodeVouchers = new ArrayList<>();
+        if (token != null) {
+            try {
+                giftVouchers = voucherService.getMyVouchers(subtotal, token);
+                publicCodeVouchers = voucherService.getPublicCodeVouchers(subtotal, token);
+            } catch (Exception ignored) {
+            }
+        }
+
+        Map<String, Object> appliedVoucherValidation = loadAppliedVoucherValidation(session, token, subtotal);
+        double cartFinalTotal = subtotal;
+        if (appliedVoucherValidation != null) {
+            cartFinalTotal = ((Number) appliedVoucherValidation.get("finalAmount")).doubleValue();
+        }
+
         model.addAttribute("cart", cart);
         model.addAttribute("cartItems", cart.get("items"));
         model.addAttribute("cartTotal", cart.get("total"));
         model.addAttribute("cartCount", cart.get("count"));
+        model.addAttribute("giftVouchers", giftVouchers);
+        model.addAttribute("publicCodeVouchers", publicCodeVouchers);
+        model.addAttribute("appliedVoucherCode", session.getAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY));
+        model.addAttribute("appliedVoucherValidation", appliedVoucherValidation);
+        model.addAttribute("cartFinalTotal", cartFinalTotal);
         return "cart/view";
     }
 
@@ -151,6 +178,8 @@ public class CartController {
         if (items == null || items.isEmpty()) {
             return "redirect:/cart";
         }
+        double subtotal = extractCartSubtotal(cart);
+        Map<String, Object> appliedVoucherValidation = loadAppliedVoucherValidation(session, token, subtotal);
 
         // Auto-fill user info from profile
         try {
@@ -162,7 +191,11 @@ public class CartController {
 
         model.addAttribute("cart", cart);
         model.addAttribute("cartTotal", cart.get("total"));
-        model.addAttribute("appliedVoucherCode", "");
+        model.addAttribute("appliedVoucherCode", session.getAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY));
+        model.addAttribute("appliedVoucherValidation", appliedVoucherValidation);
+        model.addAttribute("cartFinalTotal", appliedVoucherValidation != null
+            ? ((Number) appliedVoucherValidation.get("finalAmount")).doubleValue()
+            : subtotal);
         return "cart/checkout-standalone";
     }
 
@@ -189,6 +222,46 @@ public class CartController {
         }
     }
 
+    @PostMapping("/apply-voucher")
+    @ResponseBody
+    public ResponseEntity<?> applyVoucher(@RequestParam String code, HttpSession session) {
+        try {
+            String token = com.bookweb.util.TokenUtil.getTokenFromRequest();
+            if (token == null) {
+                return ResponseEntity.status(401).body(Map.of(
+                        "valid", false,
+                        "message", "Vui lòng đăng nhập"
+                ));
+            }
+
+            Map<String, Object> cart = cartService.getCart(session);
+            double subtotal = extractCartSubtotal(cart);
+            Map<String, Object> result = voucherService.validateVoucher(code, subtotal, token);
+            boolean valid = Boolean.TRUE.equals(result.get("valid"));
+            if (!valid) {
+                clearAppliedVoucherSession(session);
+                return ResponseEntity.badRequest().body(result);
+            }
+
+            String normalizedCode = code.trim().toUpperCase();
+            session.setAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY, normalizedCode);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            clearAppliedVoucherSession(session);
+            return ResponseEntity.badRequest().body(Map.of(
+                    "valid", false,
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/remove-voucher")
+    @ResponseBody
+    public ResponseEntity<?> removeVoucher(HttpSession session) {
+        clearAppliedVoucherSession(session);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
     /**
      * Process checkout
      */
@@ -201,7 +274,6 @@ public class CartController {
             @RequestParam String district,
             @RequestParam String shippingAddress,
             @RequestParam String paymentMethod,
-            @RequestParam(required = false) String voucherCode,
             HttpSession session,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -229,16 +301,14 @@ public class CartController {
             double subtotal = ((Number) cart.get("total")).doubleValue();
             double voucherDiscount = 0;
             double finalTotal = subtotal;
-            if (voucherCode != null && !voucherCode.isBlank()) {
-                Map<String, Object> voucherValidation = voucherService.validateVoucher(voucherCode, subtotal, token);
-                boolean valid = (Boolean) voucherValidation.get("valid");
-                if (!valid) {
-                    redirectAttributes.addFlashAttribute("error", voucherValidation.get("message"));
-                    return "redirect:/cart/checkout";
-                }
+            Map<String, Object> voucherValidation = loadAppliedVoucherValidation(session, token, subtotal);
+            if (voucherValidation != null) {
                 voucherDiscount = ((Number) voucherValidation.get("discountAmount")).doubleValue();
                 finalTotal = ((Number) voucherValidation.get("finalAmount")).doubleValue();
-                orderData.put("voucherCode", voucherCode.trim().toUpperCase());
+                String appliedCode = (String) session.getAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY);
+                if (appliedCode != null && !appliedCode.isBlank()) {
+                    orderData.put("voucherCode", appliedCode);
+                }
             }
             orderData.put("total", finalTotal);
 
@@ -259,7 +329,7 @@ public class CartController {
                 lastOrder.put("paymentMethod", paymentMethod);
                 lastOrder.put("total", finalTotal);
                 lastOrder.put("voucherDiscount", voucherDiscount);
-                lastOrder.put("voucherCode", voucherCode != null ? voucherCode.trim().toUpperCase() : null);
+                lastOrder.put("voucherCode", session.getAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY));
                 session.setAttribute("lastOrder", lastOrder);
                 return "redirect:/cart/payment";
             }
@@ -277,8 +347,10 @@ public class CartController {
             lastOrder.put("paymentMethod", paymentMethod);
             lastOrder.put("total", finalTotal);
             lastOrder.put("voucherDiscount", voucherDiscount);
-            lastOrder.put("voucherCode", voucherCode != null ? voucherCode.trim().toUpperCase() : null);
+            lastOrder.put("voucherCode", session.getAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY));
             session.setAttribute("lastOrder", lastOrder);
+
+            clearAppliedVoucherSession(session);
             return "redirect:/cart/success";
 
         } catch (Exception e) {
@@ -329,6 +401,7 @@ public class CartController {
             // Clear pending order and cart
             session.removeAttribute("pendingVietqrOrder");
             cartService.clearCart(session);
+            clearAppliedVoucherSession(session);
 
             return ResponseEntity.ok(Map.of("success", true, "orderId", realOrderId));
         } catch (Exception e) {
@@ -354,6 +427,38 @@ public class CartController {
     @PostMapping("/clear")
     public ResponseEntity<?> clearCart(HttpSession session) {
         cartService.clearCart(session);
+        clearAppliedVoucherSession(session);
         return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    private double extractCartSubtotal(Map<String, Object> cart) {
+        if (cart == null || cart.get("total") == null) {
+            return 0;
+        }
+        return ((Number) cart.get("total")).doubleValue();
+    }
+
+    private void clearAppliedVoucherSession(HttpSession session) {
+        session.removeAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY);
+    }
+
+    private Map<String, Object> loadAppliedVoucherValidation(HttpSession session, String token, double subtotal) {
+        Object appliedCodeObj = session.getAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY);
+        if (!(appliedCodeObj instanceof String appliedCode) || appliedCode.isBlank() || token == null) {
+            return null;
+        }
+
+        try {
+            Map<String, Object> validation = voucherService.validateVoucher(appliedCode, subtotal, token);
+            boolean valid = Boolean.TRUE.equals(validation.get("valid"));
+            if (!valid) {
+                clearAppliedVoucherSession(session);
+                return null;
+            }
+            return validation;
+        } catch (Exception ex) {
+            clearAppliedVoucherSession(session);
+            return null;
+        }
     }
 }

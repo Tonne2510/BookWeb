@@ -1,4 +1,4 @@
-const { User, Category, Author, Book, Review, Order, OrderItem, Favorite, Voucher, VoucherUsage } = require('../models');
+const { User, Category, Author, Book, Review, Order, OrderItem, Favorite, Voucher, VoucherUsage, VoucherRecipient } = require('../models');
 const authService = require('../utils/authService');
 const emailService = require('../utils/emailService');
 const { generateSlug } = require('../utils/slugService');
@@ -6,6 +6,116 @@ const { Op, Sequelize } = require('sequelize');
 
 // In-memory OTP store: { email -> { otp, expires } }
 const otpStore = new Map();
+
+const loadUserRewardStats = async (userId) => {
+  const reviewCount = await Review.count({
+    where: {
+      userId,
+      status: 'approved'
+    }
+  });
+  return { reviewCount };
+};
+
+const awardMilestoneVoucherIfEligible = async (userId, source, context = {}) => {
+  const { reviewCount } = await loadUserRewardStats(userId);
+  const confirmedOrderAmount = Number(context.confirmedOrderAmount || 0);
+
+  const now = new Date();
+  const templates = await Voucher.findAll({
+    where: {
+      distributionType: 'gift',
+      giftedBySystem: false,
+      userId: null,
+      isActive: true,
+      startDate: { [Op.lte]: now },
+      endDate: { [Op.gte]: now }
+    },
+    order: [['createdAt', 'DESC']]
+  });
+
+  for (const template of templates) {
+    const conditionType = template.giftConditionType || 'amount';
+    if (conditionType === 'amount') {
+      // Amount-based gift vouchers are only evaluated when a user confirms an order.
+      if (source !== 'order') {
+        continue;
+      }
+      const minAmount = Number(template.minGiftAmount || 0);
+      const maxAmount = template.maxGiftAmount != null ? Number(template.maxGiftAmount) : null;
+      if (confirmedOrderAmount < minAmount) {
+        continue;
+      }
+      if (maxAmount !== null && confirmedOrderAmount > maxAmount) {
+        continue;
+      }
+    } else if (conditionType === 'review') {
+      // Review-based gift vouchers are awarded when user creates a review.
+      if (source !== 'review') {
+        continue;
+      }
+      const minReview = Number(template.minGiftReviewCount || 0);
+      const maxReview = template.maxGiftReviewCount != null ? Number(template.maxGiftReviewCount) : null;
+      if (reviewCount < minReview) {
+        continue;
+      }
+      if (maxReview !== null && reviewCount > maxReview) {
+        continue;
+      }
+    } else {
+      continue;
+    }
+
+    const existing = await VoucherRecipient.findOne({
+      where: {
+        userId,
+        voucherId: template.id
+      }
+    });
+    if (existing) {
+      continue;
+    }
+
+    if (template.totalUsageLimit != null && Number(template.giftedCount || 0) >= Number(template.totalUsageLimit)) {
+      continue;
+    }
+
+    await VoucherRecipient.create({
+      voucherId: template.id,
+      userId,
+      source: conditionType
+    });
+
+    await template.increment('giftedCount');
+  }
+};
+
+const isVoucherUsable = async ({ voucher, userId, subtotal }) => {
+  if (!voucher || !voucher.isActive) return false;
+  const now = new Date();
+
+  if (voucher.distributionType === 'gift') {
+    if (voucher.userId && String(voucher.userId) !== String(userId || '')) {
+      return false;
+    }
+    if (!voucher.userId) {
+      const recipient = await VoucherRecipient.findOne({ where: { voucherId: voucher.id, userId } });
+      if (!recipient) return false;
+    }
+  }
+  if (voucher.startDate && now < voucher.startDate) return false;
+  if (voucher.endDate && now > voucher.endDate) return false;
+  if (voucher.totalUsageLimit != null && voucher.usedCount >= voucher.totalUsageLimit) return false;
+
+  const usageCount = await VoucherUsage.count({ where: { voucherId: voucher.id, userId } });
+  if (usageCount >= Number(voucher.perUserLimit || 1)) return false;
+
+  if (subtotal != null && Number(subtotal) > 0 && Number(subtotal) < Number(voucher.minOrderValue || 0)) {
+    return false;
+  }
+
+  return true;
+};
 
 const calculateVoucherDiscount = async ({ code, subtotal, userId }) => {
   const safeSubtotal = Number(subtotal || 0);
@@ -21,6 +131,18 @@ const calculateVoucherDiscount = async ({ code, subtotal, userId }) => {
 
   if (!voucher.isActive) {
     return { valid: false, message: 'Voucher hiện không khả dụng', voucher, discountAmount: 0, finalAmount: safeSubtotal };
+  }
+
+  if (voucher.distributionType === 'gift') {
+    if (voucher.userId && String(voucher.userId) !== String(userId || '')) {
+      return { valid: false, message: 'Voucher này chỉ áp dụng cho tài khoản được tặng', voucher: null, discountAmount: 0, finalAmount: safeSubtotal };
+    }
+    if (!voucher.userId) {
+      const recipient = await VoucherRecipient.findOne({ where: { voucherId: voucher.id, userId } });
+      if (!recipient) {
+        return { valid: false, message: 'Bạn chưa được tặng voucher này', voucher: null, discountAmount: 0, finalAmount: safeSubtotal };
+      }
+    }
   }
 
   const now = new Date();
@@ -332,6 +454,54 @@ const resolvers = {
         limit,
         offset: (page - 1) * limit
       });
+    },
+
+    publicCodeVouchers: async (_, { subtotal }, { user }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const rows = await Voucher.findAll({
+        where: {
+          distributionType: 'code',
+          isActive: true,
+          userId: null
+        },
+        order: [['createdAt', 'DESC']]
+      });
+
+      const vouchers = [];
+      for (const voucher of rows) {
+        const usable = await isVoucherUsable({ voucher, userId: user.id, subtotal });
+        if (usable) vouchers.push(voucher);
+      }
+      return vouchers;
+    },
+
+    myVouchers: async (_, { subtotal }, { user }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const recipients = await VoucherRecipient.findAll({
+        where: { userId: user.id },
+        include: [{
+          model: Voucher,
+          where: {
+            distributionType: 'gift',
+            isActive: true
+          }
+        }],
+        order: [['createdAt', 'DESC']]
+      });
+
+      const vouchers = [];
+      for (const recipient of recipients) {
+        const voucher = recipient.Voucher;
+        const usable = await isVoucherUsable({ voucher, userId: user.id, subtotal });
+        if (usable) vouchers.push(voucher);
+      }
+      return vouchers;
+    },
+
+    myGiftVouchers: async (_, { subtotal }, { user }) => {
+      return resolvers.Query.myVouchers(_, { subtotal }, { user });
     },
 
     validateVoucher: async (_, { code, subtotal }, { user }) => {
@@ -853,6 +1023,8 @@ const resolvers = {
         }
       }
 
+      await awardMilestoneVoucherIfEligible(user.id, 'review');
+
       return Review.findByPk(review.id, {
         include: [
           { model: User, attributes: { exclude: ['password'] } },
@@ -1053,6 +1225,11 @@ const resolvers = {
       if (order.status !== 'delivered') throw new Error('Only delivered orders can be confirmed');
 
       await order.update({ status: 'confirmed' });
+
+      await awardMilestoneVoucherIfEligible(user.id, 'order', {
+        confirmedOrderAmount: Number(order.totalPrice || 0)
+      });
+
       return Order.findByPk(id, {
         include: [
           { model: User, attributes: { exclude: ['password'] } },
@@ -1066,11 +1243,44 @@ const resolvers = {
       const code = args.code.trim().toUpperCase();
       const exists = await Voucher.findOne({ where: { code } });
       if (exists) throw new Error('Voucher code already exists');
+
+      const distributionType = args.distributionType || 'code';
+      if (distributionType === 'gift') {
+        const conditionType = args.giftConditionType || 'amount';
+        if (!['amount', 'review'].includes(conditionType)) {
+          throw new Error('Voucher tặng cần chọn điều kiện theo đơn hàng hoặc theo đánh giá');
+        }
+        if (conditionType === 'amount') {
+          if (args.minGiftAmount == null || Number(args.minGiftAmount) < 0) {
+            throw new Error('Voucher tặng theo đơn hàng cần cấu hình mức tối thiểu hợp lệ');
+          }
+          if (args.maxGiftAmount != null && Number(args.maxGiftAmount) < Number(args.minGiftAmount)) {
+            throw new Error('Mức tối đa đơn hàng phải lớn hơn hoặc bằng mức tối thiểu');
+          }
+        }
+        if (conditionType === 'review') {
+          if (args.minGiftReviewCount == null || Number(args.minGiftReviewCount) < 0) {
+            throw new Error('Voucher tặng theo đánh giá cần cấu hình số đánh giá tối thiểu');
+          }
+          if (args.maxGiftReviewCount != null && Number(args.maxGiftReviewCount) < Number(args.minGiftReviewCount)) {
+            throw new Error('Số đánh giá tối đa phải lớn hơn hoặc bằng số đánh giá tối thiểu');
+          }
+        }
+      }
+
       const payload = {
         ...args,
         code,
+        distributionType,
         minOrderValue: args.minOrderValue || 0,
         perUserLimit: args.perUserLimit || 1,
+        giftConditionType: distributionType === 'gift' ? (args.giftConditionType || 'amount') : null,
+        minGiftAmount: distributionType === 'gift' ? (args.minGiftAmount != null ? args.minGiftAmount : null) : null,
+        maxGiftAmount: distributionType === 'gift' ? (args.maxGiftAmount != null ? args.maxGiftAmount : null) : null,
+        minGiftReviewCount: distributionType === 'gift' ? (args.minGiftReviewCount != null ? args.minGiftReviewCount : null) : null,
+        maxGiftReviewCount: distributionType === 'gift' ? (args.maxGiftReviewCount != null ? args.maxGiftReviewCount : null) : null,
+        giftedBySystem: false,
+        userId: null,
         isActive: typeof args.isActive === 'boolean' ? args.isActive : true
       };
       return Voucher.create(payload);

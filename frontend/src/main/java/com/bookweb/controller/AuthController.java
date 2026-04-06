@@ -5,6 +5,7 @@ import com.bookweb.model.OrderDTO;
 import com.bookweb.service.AuthService;
 import com.bookweb.service.CartService;
 import com.bookweb.service.OrderService;
+import com.bookweb.service.VoucherService;
 import com.bookweb.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 @Controller
 @RequestMapping("/auth")
@@ -38,6 +41,12 @@ public class AuthController {
     @Autowired
     private OrderService orderService;
 
+    @Autowired
+    private VoucherService voucherService;
+
+    @Value("${backend.base-url:http://localhost:4000}")
+    private String backendBaseUrl;
+
     @GetMapping("/login")
     public String loginPage() {
         return "auth/login";
@@ -46,6 +55,16 @@ public class AuthController {
     @GetMapping("/register")
     public String registerPage() {
         return "auth/register";
+    }
+
+    @GetMapping("/google")
+    public String googleLogin() {
+        return "redirect:" + backendBaseUrl + "/auth/google";
+    }
+
+    @GetMapping("/github")
+    public String githubLogin() {
+        return "redirect:" + backendBaseUrl + "/auth/github";
     }
 
     @PostMapping("/send-otp")
@@ -314,6 +333,26 @@ public class AuthController {
             model.addAttribute("orders", orders);
             model.addAttribute("user", user);
             return "auth/orders";
+        } catch (Exception e) {
+            return "redirect:/auth/login";
+        }
+    }
+
+    @GetMapping("/my-vouchers")
+    public String myVouchers(Model model) {
+        try {
+            String token = TokenUtil.getTokenFromRequest();
+            if (token == null) {
+                return "redirect:/auth/login";
+            }
+
+            UserDTO user = authService.getMe(token);
+            List<com.bookweb.model.VoucherDTO> giftedVouchers = voucherService.getMyVouchers(null, token);
+            List<com.bookweb.model.VoucherDTO> codeVouchers = voucherService.getPublicCodeVouchers(null, token);
+            model.addAttribute("user", user);
+            model.addAttribute("giftedVouchers", giftedVouchers);
+            model.addAttribute("codeVouchers", codeVouchers);
+            return "auth/my-vouchers";
         } catch (Exception e) {
             return "redirect:/auth/login";
         }
