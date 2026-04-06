@@ -66,14 +66,56 @@ public class AdminController {
             checkAdminAccess();
             String token = getTokenFromSession();
 
-            // Get statistics
-            var books = bookService.getAllBooks(1, 100, "", "title", "asc");
+            // Content stats
+            var books = bookService.getAllBooks(1, 200, "", "title", "asc");
             var categories = categoryService.getAllCategories(1, 100);
             var authors = authorService.getAllAuthors(1, 100);
+
+            // All orders for revenue/status stats
+            var allOrders = orderService.getAllOrders(1, 500, null, token);
+
+            // Users & reviews
+            var users = userService.getAllUsers(1, 500, token);
+            var reviews = reviewService.getAllReviews(1, 500, null);
+
+            // Order status breakdown
+            long pendingCount   = allOrders.stream().filter(o -> "pending".equals(o.getStatus())).count();
+            long processingCount= allOrders.stream().filter(o -> "processing".equals(o.getStatus())).count();
+            long shippedCount   = allOrders.stream().filter(o -> "shipped".equals(o.getStatus())).count();
+            long deliveredCount = allOrders.stream().filter(o -> "delivered".equals(o.getStatus())).count();
+            long confirmedCount = allOrders.stream().filter(o -> "confirmed".equals(o.getStatus())).count();
+            long cancelledCount = allOrders.stream().filter(o -> "cancelled".equals(o.getStatus())).count();
+
+            // Total revenue: sum of all non-cancelled orders
+            double totalRevenue = allOrders.stream()
+                .filter(o -> !"cancelled".equals(o.getStatus()))
+                .mapToDouble(o -> o.getTotalPrice() != null ? o.getTotalPrice() : 0)
+                .sum();
+
+            // Recent 10 orders sorted by createdAt desc
+            var recentOrders = allOrders.stream()
+                .sorted((a, b) -> {
+                    String ca = a.getCreatedAt() != null ? a.getCreatedAt() : "";
+                    String cb = b.getCreatedAt() != null ? b.getCreatedAt() : "";
+                    return cb.compareTo(ca);
+                })
+                .limit(10)
+                .collect(java.util.stream.Collectors.toList());
 
             model.addAttribute("totalBooks", books.size());
             model.addAttribute("totalCategories", categories.size());
             model.addAttribute("totalAuthors", authors.size());
+            model.addAttribute("totalOrders", allOrders.size());
+            model.addAttribute("totalUsers", users.size());
+            model.addAttribute("totalReviews", reviews.size());
+            model.addAttribute("totalRevenue", (long) totalRevenue);
+            model.addAttribute("pendingCount", pendingCount);
+            model.addAttribute("processingCount", processingCount);
+            model.addAttribute("shippedCount", shippedCount);
+            model.addAttribute("deliveredCount", deliveredCount);
+            model.addAttribute("confirmedCount", confirmedCount);
+            model.addAttribute("cancelledCount", cancelledCount);
+            model.addAttribute("recentOrders", recentOrders);
 
             return "admin/dashboard-standalone";
         } catch (Exception e) {

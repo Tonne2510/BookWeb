@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -6,250 +6,432 @@
     <title>Admin Dashboard - BookWeb</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
-        
-        .admin-wrapper { display: flex; height: 100vh; }
-        .admin-sidebar { 
-            width: 280px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-            padding: 30px 0;
-            position: fixed; 
-            left: 0; 
-            top: 0; 
-            height: 100vh;
-            overflow-y: auto;
-            box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; }
+
+        /* ===== SIDEBAR ===== */
+        .admin-wrapper { display: flex; min-height: 100vh; }
+        .admin-sidebar {
+            width: 260px; min-width: 260px;
+            background: linear-gradient(160deg, #1a1f5e 0%, #3b3f9c 50%, #6f42c1 100%);
+            color: white; padding: 0;
+            position: fixed; left: 0; top: 0; height: 100vh;
+            overflow-y: auto; z-index: 100;
+            box-shadow: 3px 0 20px rgba(0,0,0,0.2);
         }
-        
-        .admin-sidebar::-webkit-scrollbar { width: 6px; }
-        .admin-sidebar::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
-        .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
-        
         .sidebar-brand {
-            padding: 20px 25px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            margin-bottom: 30px;
-            text-align: center;
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            display: flex; align-items: center; gap: 12px;
         }
-        .sidebar-brand h2 { font-size: 1.6em; margin: 0 0 5px 0; }
-        .sidebar-brand p { font-size: 0.75em; margin: 0; opacity: 0.8; }
-        
-        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-        .sidebar-menu li { margin: 0; }
+        .sidebar-brand-icon {
+            width: 42px; height: 42px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3em;
+        }
+        .sidebar-brand h2 { font-size: 1.25em; margin: 0; font-weight: 700; }
+        .sidebar-brand p { font-size: 0.72em; margin: 0; opacity: 0.65; }
+        .sidebar-section-label {
+            padding: 20px 20px 8px;
+            font-size: 0.68em; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.45);
+        }
+        .sidebar-menu { list-style: none; padding: 0 10px; margin: 0; }
         .sidebar-menu a {
-            display: block;
-            padding: 12px 25px;
-            color: rgba(255,255,255,0.85);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-            font-size: 0.95em;
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; color: rgba(255,255,255,0.8);
+            text-decoration: none; border-radius: 8px;
+            font-size: 0.9em; margin-bottom: 2px;
+            transition: all 0.2s ease;
         }
-        .sidebar-menu a:hover {
-            background-color: rgba(255,255,255,0.1);
-            border-left-color: white;
-            color: white;
-        }
-        .sidebar-menu a.active {
-            background-color: rgba(255,255,255,0.2);
-            border-left-color: white;
-            color: white;
-            font-weight: 600;
-        }
-        
-        .sidebar-divider {
-            margin: 20px 0;
-            border-top: 1px solid rgba(255,255,255,0.15);
-        }
-        
-        .admin-main {
-            margin-left: 280px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
+        .sidebar-menu a i { width: 18px; text-align: center; }
+        .sidebar-menu a:hover { background: rgba(255,255,255,0.12); color: white; }
+        .sidebar-menu a.active { background: rgba(255,255,255,0.22); color: white; font-weight: 600; }
+        .sidebar-divider { margin: 10px 20px; border-top: 1px solid rgba(255,255,255,0.12); }
+        .sidebar-bottom { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px; border-top: 1px solid rgba(255,255,255,0.12); }
+
+        /* ===== MAIN ===== */
+        .admin-main { margin-left: 260px; flex: 1; min-height: 100vh; }
         .admin-topbar {
-            background: white;
-            padding: 20px 30px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background: white; padding: 16px 28px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 50;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
         }
-        
-        .topbar-title h1 { font-size: 1.8em; margin: 0; color: #333; }
-        .topbar-bread { font-size: 0.9em; color: #999; margin-top: 5px; }
-        
-        .admin-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 30px;
+        .topbar-left h1 { font-size: 1.4em; font-weight: 700; color: #1a1f5e; margin: 0; }
+        .topbar-breadcrumb { font-size: 0.8em; color: #9ca3af; margin-top: 2px; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .topbar-date { font-size: 0.82em; color: #6b7280; }
+
+        .admin-content { padding: 24px 28px; }
+
+        /* ===== WELCOME BANNER ===== */
+        .welcome-banner {
+            background: linear-gradient(135deg, #1a1f5e 0%, #6f42c1 100%);
+            color: white; border-radius: 14px; padding: 28px 32px;
+            margin-bottom: 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 20px rgba(111,66,193,0.3);
         }
-        
-        .stat-card {
-            background: white;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            text-align: center;
+        .welcome-banner h2 { font-size: 1.6em; font-weight: 700; margin: 0 0 6px 0; }
+        .welcome-banner p { margin: 0; opacity: 0.85; font-size: 0.95em; }
+        .welcome-banner-icon { font-size: 4em; opacity: 0.25; }
+
+        /* ===== KPI CARDS ===== */
+        .kpi-card {
+            background: white; border-radius: 12px; padding: 22px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex; align-items: center; gap: 16px;
             margin-bottom: 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+        .kpi-icon {
+            width: 56px; height: 56px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5em; flex-shrink: 0;
         }
-        
-        .stat-icon {
-            font-size: 2.5em;
-            margin-bottom: 15px;
+        .kpi-icon.revenue { background: #fef3c7; color: #d97706; }
+        .kpi-icon.orders { background: #dbeafe; color: #2563eb; }
+        .kpi-icon.users { background: #dcfce7; color: #16a34a; }
+        .kpi-icon.reviews { background: #fce7f3; color: #db2777; }
+        .kpi-icon.books { background: #ede9fe; color: #7c3aed; }
+        .kpi-icon.authors { background: #e0f2fe; color: #0284c7; }
+        .kpi-value { font-size: 1.8em; font-weight: 800; color: #111827; line-height: 1; }
+        .kpi-label { font-size: 0.8em; color: #6b7280; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kpi-sub { font-size: 0.75em; color: #9ca3af; margin-top: 2px; }
+
+        /* ===== STATUS CARDS ===== */
+        .status-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px; }
+        .status-mini {
+            background: white; border-radius: 10px; padding: 16px 12px;
+            text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border-top: 3px solid;
         }
-        
-        .stat-value {
-            font-size: 2em;
-            font-weight: 700;
-            color: #333;
-            margin: 10px 0;
-        }
-        
-        .stat-label {
-            color: #999;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .stat-card.books { --color: #667eea; }
-        .stat-card.categories { --color: #764ba2; }
-        .stat-card.authors { --color: #f093fb; }
-        .stat-card.orders { --color: #4facfe; }
-        
-        .stat-card.books .stat-icon { color: #667eea; }
-        .stat-card.categories .stat-icon { color: #764ba2; }
-        .stat-card.authors .stat-icon { color: #f093fb; }
-        .stat-card.orders .stat-icon { color: #4facfe; }
-        
-        .welcome-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .welcome-section h2 { margin: 0 0 10px 0; font-size: 1.8em; }
-        .welcome-section p { margin: 0; opacity: 0.9; }
+        .status-mini.pending { border-color: #f59e0b; }
+        .status-mini.processing { border-color: #3b82f6; }
+        .status-mini.shipped { border-color: #0ea5e9; }
+        .status-mini.delivered { border-color: #22c55e; }
+        .status-mini.confirmed { border-color: #8b5cf6; }
+        .status-mini.cancelled { border-color: #ef4444; }
+        .status-mini .count { font-size: 1.8em; font-weight: 800; color: #111827; }
+        .status-mini .label { font-size: 0.72em; color: #6b7280; margin-top: 4px; font-weight: 600; }
+
+        /* ===== SECTION CARD ===== */
+        .section-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; overflow: hidden; }
+        .section-header { padding: 18px 22px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; }
+        .section-header h5 { font-size: 1em; font-weight: 700; color: #1a1f5e; margin: 0; }
+        .section-body { padding: 22px; }
+
+        /* ===== RECENT ORDERS TABLE ===== */
+        .orders-table { width: 100%; font-size: 0.88em; }
+        .orders-table th { font-weight: 600; color: #6b7280; padding: 10px 14px; border-bottom: 2px solid #f3f4f6; white-space: nowrap; }
+        .orders-table td { padding: 12px 14px; border-bottom: 1px solid #f9fafb; vertical-align: middle; }
+        .orders-table tr:last-child td { border-bottom: none; }
+        .orders-table tr:hover td { background: #f9fafb; }
+        .order-num { font-weight: 700; color: #1a1f5e; font-size: 0.85em; }
+        .customer-name { color: #374151; }
+        .price-cell { font-weight: 700; color: #059669; }
+
+        .badge-status { padding: 3px 10px; border-radius: 20px; font-size: 0.78em; font-weight: 600; }
+        .bs-pending { background: #fef3c7; color: #92400e; }
+        .bs-processing { background: #dbeafe; color: #1e40af; }
+        .bs-shipped { background: #e0f2fe; color: #0369a1; }
+        .bs-delivered { background: #dcfce7; color: #166534; }
+        .bs-confirmed { background: #ede9fe; color: #5b21b6; }
+        .bs-cancelled { background: #fee2e2; color: #991b1b; }
+
+        /* ===== CHART ===== */
+        .chart-container { position: relative; height: 280px; }
     </style>
 </head>
 <body>
-    <div class="admin-wrapper">
-        <!-- Sidebar Navigation -->
-        <aside class="admin-sidebar">
-            <div class="sidebar-brand">
-                <h2><i class="fas fa-book"></i> BookWeb</h2>
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon"><i class="fas fa-book"></i></div>
+            <div>
+                <h2>BookWeb</h2>
                 <p>Admin Panel</p>
             </div>
-            
-            <ul class="sidebar-menu">
-                <li><a href="/admin/dashboard" class="active"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
-            </ul>
-            
-            <div class="sidebar-divider"></div>
-            
-            <p style="padding: 0 25px; font-size: 0.85em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin: 0 0 15px 0;">Quan Ly Noi Dung</p>
-            <ul class="sidebar-menu">
-                <li><a href="/admin/books"><i class="fas fa-book-open me-2"></i>Sach</a></li>
-                <li><a href="/admin/categories"><i class="fas fa-list me-2"></i>Danh Muc</a></li>
-                <li><a href="/admin/authors"><i class="fas fa-user-edit me-2"></i>Tac Gia</a></li>
-            </ul>
-            
-            <div class="sidebar-divider"></div>
-            
-            <p style="padding: 0 25px; font-size: 0.85em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin: 0 0 15px 0;">Quan Ly Ban Hang</p>
-            <ul class="sidebar-menu">
-                <li><a href="/admin/orders"><i class="fas fa-shopping-cart me-2"></i>Don Hang</a></li>
-                <li><a href="/admin/vouchers"><i class="fas fa-ticket-alt me-2"></i>Voucher</a></li>
-                <li><a href="/admin/reviews"><i class="fas fa-star me-2"></i>Nhan Xet</a></li>
-                <li><a href="/admin/users"><i class="fas fa-users me-2"></i>Nguoi Dung</a></li>
-            </ul>
-            
-            <div class="sidebar-divider"></div>
-            
-            <ul class="sidebar-menu" style="margin-top: 40px;">
-                <li><a href="/auth/profile"><i class="fas fa-user-circle me-2"></i>Ho So Cua Toi</a></li>
-                <li><a href="/auth/logout"><i class="fas fa-sign-out-alt me-2"></i>Dang Xuat</a></li>
-            </ul>
-        </aside>
-        
-        <!-- Main Content -->
-        <div class="admin-main">
-            <!-- Top Bar -->
-            <div class="admin-topbar">
-                <div class="topbar-title">
-                    <h1><i class="fas fa-chart-line me-2"></i>Dashboard</h1>
-                    <div class="topbar-bread">Admin / Dashboard</div>
-                </div>
-                <div>
-                    <i class="fas fa-bell" style="font-size: 1.5em; cursor: pointer; color: #999;"></i>
-                </div>
+        </div>
+
+        <div class="sidebar-section-label">Tổng Quan</div>
+        <ul class="sidebar-menu">
+            <li><a href="/admin/dashboard" class="active"><i class="fas fa-chart-line"></i>Dashboard</a></li>
+        </ul>
+
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section-label">Quản Lý Nội Dung</div>
+        <ul class="sidebar-menu">
+            <li><a href="/admin/books"><i class="fas fa-book-open"></i>Sách</a></li>
+            <li><a href="/admin/categories"><i class="fas fa-list"></i>Danh Mục</a></li>
+            <li><a href="/admin/authors"><i class="fas fa-user-edit"></i>Tác Giả</a></li>
+        </ul>
+
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section-label">Quản Lý Bán Hàng</div>
+        <ul class="sidebar-menu">
+            <li><a href="/admin/orders"><i class="fas fa-shopping-cart"></i>Đơn Hàng</a></li>
+            <li><a href="/admin/vouchers"><i class="fas fa-ticket-alt"></i>Voucher</a></li>
+            <li><a href="/admin/reviews"><i class="fas fa-star"></i>Nhận Xét</a></li>
+            <li><a href="/admin/users"><i class="fas fa-users"></i>Người Dùng</a></li>
+        </ul>
+
+        <div class="sidebar-divider"></div>
+        <ul class="sidebar-menu" style="margin-top: 8px;">
+            <li><a href="/auth/profile"><i class="fas fa-user-circle"></i>Hồ Sơ Của Tôi</a></li>
+            <li><a href="/auth/logout"><i class="fas fa-sign-out-alt"></i>Đăng Xuất</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main -->
+    <div class="admin-main">
+        <!-- Topbar -->
+        <div class="admin-topbar">
+            <div class="topbar-left">
+                <h1><i class="fas fa-chart-line me-2"></i>Dashboard</h1>
+                <div class="topbar-breadcrumb">Admin / Tổng Quan</div>
             </div>
-            
-            <!-- Content Area -->
-            <div class="admin-content">
-                <div class="welcome-section">
-                    <h2>Xin chào Admin!</h2>
-                    <p>Chào mừng đến Dashboard quản trị BookWeb. Dưới đây là tóm tắt dữ liệu hệ thống của bạn.</p>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6 col-lg-3">
-                        <div class="stat-card books">
-                            <div class="stat-icon"><i class="fas fa-book-open"></i></div>
-                            <div class="stat-value" th:text="${totalBooks ?: 0}">0</div>
-                            <div class="stat-label">Sách</div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6 col-lg-3">
-                        <div class="stat-card categories">
-                            <div class="stat-icon"><i class="fas fa-list"></i></div>
-                            <div class="stat-value" th:text="${totalCategories ?: 0}">0</div>
-                            <div class="stat-label">Danh Mục</div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6 col-lg-3">
-                        <div class="stat-card authors">
-                            <div class="stat-icon"><i class="fas fa-user-edit"></i></div>
-                            <div class="stat-value" th:text="${totalAuthors ?: 0}">0</div>
-                            <div class="stat-label">Tác Giả</div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6 col-lg-3">
-                        <div class="stat-card orders">
-                            <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
-                            <div class="stat-value" th:text="${totalOrders ?: 0}">0</div>
-                            <div class="stat-label">Đơn Hàng</div>
-                        </div>
-                    </div>
-                </div>
+            <div class="topbar-right">
+                <span class="topbar-date" id="currentDate"></span>
+                <a href="/admin/orders" class="btn btn-sm btn-outline-primary"><i class="fas fa-shopping-cart me-1"></i>Xem Đơn Hàng</a>
             </div>
         </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <div class="admin-content">
+
+            <!-- Welcome Banner -->
+            <div class="welcome-banner">
+                <div>
+                    <h2>Xin chào Admin!</h2>
+                    <p>Chào mừng đến Dashboard quản trị BookWeb. Dưới đây là tổng quan hệ thống.</p>
+                </div>
+                <div class="welcome-banner-icon"><i class="fas fa-chart-bar"></i></div>
+            </div>
+
+            <!-- KPI Row 1: Revenue + Orders + Users + Reviews -->
+            <div class="row g-3 mb-2">
+                <div class="col-md-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon revenue"><i class="fas fa-money-bill-wave"></i></div>
+                        <div>
+                            <div class="kpi-value" th:text="'₫' + ${#numbers.formatInteger(totalRevenue ?: 0, 0, 'DEFAULT')}">₫0</div>
+                            <div class="kpi-label">Tổng Doanh Thu</div>
+                            <div class="kpi-sub">Không tính đơn hủy</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon orders"><i class="fas fa-shopping-bag"></i></div>
+                        <div>
+                            <div class="kpi-value" th:text="${totalOrders ?: 0}">0</div>
+                            <div class="kpi-label">Tổng Đơn Hàng</div>
+                            <div class="kpi-sub" th:text="${pendingCount} + ' chờ xử lý'">0 chờ xử lý</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon users"><i class="fas fa-users"></i></div>
+                        <div>
+                            <div class="kpi-value" th:text="${totalUsers ?: 0}">0</div>
+                            <div class="kpi-label">Người Dùng</div>
+                            <div class="kpi-sub">Tổng tài khoản</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="kpi-card">
+                        <div class="kpi-icon reviews"><i class="fas fa-star"></i></div>
+                        <div>
+                            <div class="kpi-value" th:text="${totalReviews ?: 0}">0</div>
+                            <div class="kpi-label">Nhận Xét</div>
+                            <div class="kpi-sub">Tổng đánh giá</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Row 2: Books + Categories + Authors -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="kpi-card">
+                        <div class="kpi-icon books"><i class="fas fa-book-open"></i></div>
+                        <div>
+                            <div class="kpi-value" th:text="${totalBooks ?: 0}">0</div>
+                            <div class="kpi-label">Sách</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="kpi-card">
+                        <div class="kpi-icon authors"><i class="fas fa-list"></i></div>
+                        <div>
+                            <div class="kpi-value" th:text="${totalCategories ?: 0}">0</div>
+                            <div class="kpi-label">Danh Mục</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="kpi-card">
+                        <div class="kpi-icon revenue"><i class="fas fa-user-edit"></i></div>
+                        <div>
+                            <div class="kpi-value" th:text="${totalAuthors ?: 0}">0</div>
+                            <div class="kpi-label">Tác Giả</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Status Breakdown -->
+            <div class="section-card mb-4">
+                <div class="section-header">
+                    <h5><i class="fas fa-layer-group me-2 text-primary"></i>Phân Loại Đơn Hàng</h5>
+                </div>
+                <div class="section-body pt-0 pb-3 px-3">
+                    <div class="status-grid">
+                        <div class="status-mini pending">
+                            <div class="count" th:text="${pendingCount ?: 0}">0</div>
+                            <div class="label">⏳ Chờ Xử Lý</div>
+                        </div>
+                        <div class="status-mini processing">
+                            <div class="count" th:text="${processingCount ?: 0}">0</div>
+                            <div class="label">🔄 Đang Xử Lý</div>
+                        </div>
+                        <div class="status-mini shipped">
+                            <div class="count" th:text="${shippedCount ?: 0}">0</div>
+                            <div class="label">🚚 Đang Giao</div>
+                        </div>
+                        <div class="status-mini delivered">
+                            <div class="count" th:text="${deliveredCount ?: 0}">0</div>
+                            <div class="label">✅ Đã Giao</div>
+                        </div>
+                        <div class="status-mini confirmed">
+                            <div class="count" th:text="${confirmedCount ?: 0}">0</div>
+                            <div class="label">💜 Đã Xác Nhận</div>
+                        </div>
+                        <div class="status-mini cancelled">
+                            <div class="count" th:text="${cancelledCount ?: 0}">0</div>
+                            <div class="label">❌ Đã Hủy</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Orders + Chart -->
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h5><i class="fas fa-clock me-2 text-primary"></i>Đơn Hàng Gần Đây</h5>
+                            <a href="/admin/orders" class="btn btn-sm btn-outline-secondary">Xem tất cả</a>
+                        </div>
+                        <div class="section-body p-0">
+                            <div th:if="${recentOrders != null and !recentOrders.isEmpty()}">
+                                <table class="orders-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã Đơn</th>
+                                            <th>Khách Hàng</th>
+                                            <th>Tổng Tiền</th>
+                                            <th>Trạng Thái</th>
+                                            <th>Ngày Đặt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="order : ${recentOrders}">
+                                            <td><span class="order-num" th:text="${order.orderNumber ?: order.id}">-</span></td>
+                                            <td>
+                                                <span class="customer-name" th:if="${order.user != null}"
+                                                    th:text="${order.user.firstName + ' ' + order.user.lastName}">-</span>
+                                                <span class="customer-name" th:unless="${order.user != null}">Khách</span>
+                                            </td>
+                                            <td><span class="price-cell" th:text="'₫' + ${#numbers.formatInteger(order.totalPrice ?: 0, 0, 'DEFAULT')}">₫0</span></td>
+                                            <td>
+                                                <span th:switch="${order.status}">
+                                                    <span th:case="'pending'" class="badge-status bs-pending">Chờ xử lý</span>
+                                                    <span th:case="'processing'" class="badge-status bs-processing">Xử lý</span>
+                                                    <span th:case="'shipped'" class="badge-status bs-shipped">Giao hàng</span>
+                                                    <span th:case="'delivered'" class="badge-status bs-delivered">Đã giao</span>
+                                                    <span th:case="'confirmed'" class="badge-status bs-confirmed">Xác nhận</span>
+                                                    <span th:case="'cancelled'" class="badge-status bs-cancelled">Đã hủy</span>
+                                                    <span th:case="*" class="badge-status bs-pending" th:text="${order.status}">-</span>
+                                                </span>
+                                            </td>
+                                            <td style="color:#9ca3af; font-size:0.85em;"
+                                                th:text="${order.createdAt != null ? #strings.substring(order.createdAt, 0, 10) : '-'}">-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div th:unless="${recentOrders != null and !recentOrders.isEmpty()}"
+                                 style="text-align:center; padding: 40px; color:#9ca3af;">
+                                <i class="fas fa-inbox" style="font-size:2em; margin-bottom:10px; display:block;"></i>
+                                Chưa có đơn hàng nào
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h5><i class="fas fa-chart-pie me-2 text-primary"></i>Biểu Đồ Đơn Hàng</h5>
+                        </div>
+                        <div class="section-body">
+                            <div class="chart-container">
+                                <canvas id="orderChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- end admin-content -->
+    </div><!-- end admin-main -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    // Current date
+    const d = new Date();
+    document.getElementById('currentDate').textContent =
+        d.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Chart data from Thymeleaf
+    const pending   = /*[[${pendingCount   ?: 0}]]*/ 0;
+    const processing= /*[[${processingCount?: 0}]]*/ 0;
+    const shipped   = /*[[${shippedCount   ?: 0}]]*/ 0;
+    const delivered = /*[[${deliveredCount ?: 0}]]*/ 0;
+    const confirmed = /*[[${confirmedCount ?: 0}]]*/ 0;
+    const cancelled = /*[[${cancelledCount ?: 0}]]*/ 0;
+
+    new Chart(document.getElementById('orderChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Chờ xử lý', 'Đang xử lý', 'Đang giao', 'Đã giao', 'Xác nhận', 'Đã hủy'],
+            datasets: [{
+                data: [pending, processing, shipped, delivered, confirmed, cancelled],
+                backgroundColor: ['#fbbf24','#3b82f6','#0ea5e9','#22c55e','#8b5cf6','#ef4444'],
+                borderWidth: 2, borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } }
+            },
+            cutout: '65%'
+        }
+    });
+</script>
 </body>
 </html>
-
-
-
-
