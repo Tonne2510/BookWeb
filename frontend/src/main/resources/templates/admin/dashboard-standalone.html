@@ -91,6 +91,7 @@
             margin-bottom: 20px;
             transition: transform 0.2s, box-shadow 0.2s;
         }
+        .kpi-card.kpi-nav { cursor: pointer; }
         .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
         .kpi-icon {
             width: 56px; height: 56px; border-radius: 12px;
@@ -149,6 +150,12 @@
 
         /* ===== CHART ===== */
         .chart-container { position: relative; height: 280px; }
+
+        /* Accessible focus style for clickable KPI cards */
+        .kpi-card.kpi-nav:focus-visible {
+            outline: 3px solid #3b82f6;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
@@ -199,10 +206,6 @@
                 <h1><i class="fas fa-chart-line me-2"></i>Dashboard</h1>
                 <div class="topbar-breadcrumb">Admin / Tổng Quan</div>
             </div>
-            <div class="topbar-right">
-                <span class="topbar-date" id="currentDate"></span>
-                <a href="/admin/orders" class="btn btn-sm btn-outline-primary"><i class="fas fa-shopping-cart me-1"></i>Xem Đơn Hàng</a>
-            </div>
         </div>
 
         <div class="admin-content">
@@ -229,7 +232,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                    <div class="kpi-card">
+                    <div class="kpi-card kpi-nav" role="link" tabindex="0" data-url="/admin/orders">
                         <div class="kpi-icon orders"><i class="fas fa-shopping-bag"></i></div>
                         <div>
                             <div class="kpi-value" th:text="${totalOrders ?: 0}">0</div>
@@ -239,7 +242,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                    <div class="kpi-card">
+                    <div class="kpi-card kpi-nav" role="link" tabindex="0" data-url="/admin/users">
                         <div class="kpi-icon users"><i class="fas fa-users"></i></div>
                         <div>
                             <div class="kpi-value" th:text="${totalUsers ?: 0}">0</div>
@@ -249,7 +252,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-3">
-                    <div class="kpi-card">
+                    <div class="kpi-card kpi-nav" role="link" tabindex="0" data-url="/admin/reviews">
                         <div class="kpi-icon reviews"><i class="fas fa-star"></i></div>
                         <div>
                             <div class="kpi-value" th:text="${totalReviews ?: 0}">0</div>
@@ -263,7 +266,7 @@
             <!-- KPI Row 2: Books + Categories + Authors -->
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
-                    <div class="kpi-card">
+                    <div class="kpi-card kpi-nav" role="link" tabindex="0" data-url="/admin/books">
                         <div class="kpi-icon books"><i class="fas fa-book-open"></i></div>
                         <div>
                             <div class="kpi-value" th:text="${totalBooks ?: 0}">0</div>
@@ -272,7 +275,7 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="kpi-card">
+                    <div class="kpi-card kpi-nav" role="link" tabindex="0" data-url="/admin/categories">
                         <div class="kpi-icon authors"><i class="fas fa-list"></i></div>
                         <div>
                             <div class="kpi-value" th:text="${totalCategories ?: 0}">0</div>
@@ -281,7 +284,7 @@
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="kpi-card">
+                    <div class="kpi-card kpi-nav" role="link" tabindex="0" data-url="/admin/authors">
                         <div class="kpi-icon revenue"><i class="fas fa-user-edit"></i></div>
                         <div>
                             <div class="kpi-value" th:text="${totalAuthors ?: 0}">0</div>
@@ -400,10 +403,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script th:inline="javascript">
-    // Current date
-    const d = new Date();
-    document.getElementById('currentDate').textContent =
-        d.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    // Clickable KPI cards
+    document.querySelectorAll('.kpi-nav[data-url]').forEach(card => {
+        const go = () => {
+            const url = card.getAttribute('data-url');
+            if (url) window.location.href = url;
+        };
+        card.addEventListener('click', go);
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                go();
+            }
+        });
+    });
 
     // Chart data from Thymeleaf
     const pending   = /*[[${pendingCount   ?: 0}]]*/ 0;
