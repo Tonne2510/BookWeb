@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đơn Hàng Thành Công - BookWeb</title>
+</head>
+<body>
+    <div th:fragment="content">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="text-center mb-5">
+                    <div style="font-size: 3em; color: #28a745; margin-bottom: 20px;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h1 style="color: #28a745;">Đơn Hàng Thành Công!</h1>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Cảm ơn bạn đã đặt hàng</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Chúng tôi đã nhận được đơn hàng của bạn. Vui lòng kiểm tra email để nhận thông tin chi tiết.</p>
+                        <hr/>
+
+                        <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Thông Tin Đơn Hàng</h6>
+                        <div class="row mb-3" th:if="${orderId}">
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <small class="text-muted">Mã Đơn Hàng</small>
+                                    <div th:text="${orderId}" style="font-weight: 700; color: #0066CC;"></div>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">Tên Khách Hàng</small>
+                                    <div th:text="${fullName}" style="font-weight: 700;"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-2">
+                                    <small class="text-muted">Email</small>
+                                    <div th:text="${email}"></div>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">Điện Thoại</small>
+                                    <div th:text="${phone}"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr th:if="${orderId}"/>
+                        <h6 class="mb-3" th:if="${shippingAddress}"><i class="fas fa-map-marker-alt me-2"></i>Địa Chỉ Giao Hàng</h6>
+                        <div th:if="${shippingAddress}" th:text="${shippingAddress}" style="background: #f5f5f5; padding: 15px; border-radius: 6px;"></div>
+
+                        <hr th:if="${paymentMethod}"/>
+                        <h6 class="mb-3" th:if="${paymentMethod}"><i class="fas fa-credit-card me-2"></i>Phương Thức Thanh Toán</h6>
+                        <div th:if="${paymentMethod}" th:switch="${paymentMethod}">
+                            <span th:case="'COD'" class="badge bg-warning text-dark">
+                                <i class="fas fa-money-bill me-1"></i>Thanh Toán Khi Nhận Hàng (COD)
+                            </span>
+                            <span th:case="'BANK_TRANSFER'" class="badge bg-info">
+                                <i class="fas fa-university me-1"></i>Chuyển Khoản Ngân Hàng
+                            </span>
+                            <span th:case="*" class="badge bg-secondary" th:text="${paymentMethod}"></span>
+                        </div>
+
+                        <div th:if="${total}">
+                            <hr/>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Tổng Cộng</h6>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <h5 style="color: #0066CC;" th:text="'₫' + ${#numbers.formatInteger(total, 0)}"></h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-clock me-2"></i>
+                    <strong>Thời Gian Xử Lý:</strong> Đơn hàng của bạn sẽ được xử lý trong 24 giờ. Bạn sẽ nhận được email xác nhận cùng với dự kiến thời gian giao hàng.
+                </div>
+
+                <div class="btn-group w-100" role="group">
+                    <a href="/" class="btn btn-outline-primary">
+                        <i class="fas fa-home me-2"></i>Về Trang Chủ
+                    </a>
+                    <a href="/books" class="btn btn-outline-primary">
+                        <i class="fas fa-book me-2"></i>Tiếp Tục Mua Sắm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+</html>

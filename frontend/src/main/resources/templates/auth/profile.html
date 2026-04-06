@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài Khoản - BookWeb</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">📚 BookWeb</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Trang Chủ</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/books">Sách</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth/logout">Đăng Xuất</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile -->
+    <div class="container py-5">
+        <!-- Messages -->
+        <div th:if="${message}" class="alert alert-success alert-dismissible fade show">
+            <span th:text="${message}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <img th:src="${user.avatar}" alt="Avatar" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;"
+                             onerror="this.src='https://ui-avatars.com/api/?name=User&background=0D6EFD&color=fff&size=150'">
+                        <h3 th:text="${user.firstName + ' ' + user.lastName}">Tên Người Dùng</h3>
+                        <p class="text-muted" th:text="${user.email}">email@example.com</p>
+                        <span class="badge bg-primary" th:text="${user.role == 'admin' ? 'Quản trị viên' : 'Người dùng'}">Người dùng</span>
+                        <span class="badge" th:classappend="${user.status == 'active'} ? 'bg-success' : 'bg-danger'" th:text="${user.status == 'active' ? 'Hoạt động' : 'Bị khóa'}">Trạng thái</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <!-- Profile Info (view mode) -->
+                <div class="card" id="profileView">
+                    <div class="card-body">
+                        <h4 class="card-title">Thông Tin Cá Nhân</h4>
+                        <dl class="row mt-3">
+                            <dt class="col-sm-3">Họ</dt>
+                            <dd class="col-sm-9" th:text="${user.firstName}">-</dd>
+
+                            <dt class="col-sm-3">Tên</dt>
+                            <dd class="col-sm-9" th:text="${user.lastName}">-</dd>
+
+                            <dt class="col-sm-3">Email</dt>
+                            <dd class="col-sm-9" th:text="${user.email}">-</dd>
+
+                            <dt class="col-sm-3">Số Điện Thoại</dt>
+                            <dd class="col-sm-9" th:text="${user.phone ?: 'Chưa cập nhật'}">-</dd>
+
+                            <dt class="col-sm-3">Địa Chỉ</dt>
+                            <dd class="col-sm-9" th:text="${user.address ?: 'Chưa cập nhật'}">-</dd>
+                        </dl>
+
+                        <button class="btn btn-primary" onclick="toggleEdit()"><i class="fas fa-edit me-1"></i>Chỉnh Sửa</button>
+                    </div>
+                </div>
+
+                <!-- Edit Profile Form (hidden by default) -->
+                <div class="card" id="profileEdit" style="display: none;">
+                    <div class="card-body">
+                        <h4 class="card-title">Chỉnh Sửa Thông Tin</h4>
+                        <form method="POST" action="/auth/profile/update" class="mt-3">
+                            <div class="mb-3">
+                                <label class="form-label">Họ</label>
+                                <input type="text" class="form-control" name="firstName" th:value="${user.firstName}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Tên</label>
+                                <input type="text" class="form-control" name="lastName" th:value="${user.lastName}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Số Điện Thoại</label>
+                                <input type="tel" class="form-control" name="phone" th:value="${user.phone}" placeholder="Nhập số điện thoại">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Địa Chỉ</label>
+                                <textarea class="form-control" name="address" rows="2" placeholder="Nhập địa chỉ" th:text="${user.address}"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success me-2"><i class="fas fa-save me-1"></i>Lưu Thay Đổi</button>
+                            <button type="button" class="btn btn-secondary" onclick="toggleEdit()">Hủy</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h4 class="card-title">Thao Tác Nhanh</h4>
+                        <a href="/books" class="btn btn-outline-primary me-2"><i class="fas fa-book me-1"></i>Xem Sách</a>
+                        <a href="/auth/orders" class="btn btn-outline-success"><i class="fas fa-box me-1"></i>Đơn Hàng Của Tôi</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container text-center">
+            <p>&copy; 2024 BookWeb. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleEdit() {
+            var view = document.getElementById('profileView');
+            var edit = document.getElementById('profileEdit');
+            if (view.style.display === 'none') {
+                view.style.display = '';
+                edit.style.display = 'none';
+            } else {
+                view.style.display = 'none';
+                edit.style.display = '';
+            }
+        }
+    </script>
+</body>
+</html>

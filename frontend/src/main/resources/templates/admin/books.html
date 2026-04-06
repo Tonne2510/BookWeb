@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Sách - Admin</title>
+</head>
+<body>
+    <div th:fragment="content">
+        <div class="container-fluid mt-4">
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <h2><i class="fas fa-book me-2"></i>Quản Lý Sách</h2>
+                </div>
+                <div class="col-md-4">
+                    <a href="/admin/books/create" class="btn btn-primary float-end">
+                        <i class="fas fa-plus me-2"></i>Thêm Sách Mới
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tên Sách</th>
+                                <th>Tác Giả</th>
+                                <th>Danh Mục</th>
+                                <th>Giá</th>
+                                <th>Kho</th>
+                                <th>Trạng Thái</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="book : ${books}" th:unless="${books.isEmpty()}">
+                                <td><strong th:text="${book.title}"></strong></td>
+                                <td th:text="${book.authorName ?: 'N/A'}"></td>
+                                <td th:text="${book.categoryName ?: 'N/A'}"></td>
+                                <td style="color: #0066CC; font-weight: 700;" th:text="'₫' + ${#numbers.formatInteger(book.finalPrice, 0)}"></td>
+                                <td th:text="${book.stock}"></td>
+                                <td>
+                                    <span th:switch="${book.status}" class="badge">
+                                        <span th:case="'active'" class="badge bg-success">Hoạt Động</span>
+                                        <span th:case="'inactive'" class="badge bg-warning">Không Hoạt Động</span>
+                                        <span th:case="*" class="badge bg-secondary" th:text="${book.status}"></span>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a th:href="@{/admin/books/edit/{id}(id=${book.id})}" class="btn btn-warning"><i class="fas fa-edit"></i></a>
+                                        <button class="btn btn-danger" type="button"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${books.isEmpty()}">
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox" style="font-size: 2em; margin-bottom: 10px;"></i>
+                                    <p>Không có sách nào</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

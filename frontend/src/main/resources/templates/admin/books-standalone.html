@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Sách - BookWeb Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        .admin-wrapper { display: flex; height: 100vh; }
+        .admin-sidebar { width: 280px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 0; position: fixed; left: 0; top: 0; height: 100vh; overflow-y: auto; box-shadow: 2px 0 15px rgba(0,0,0,0.1); }
+        .admin-sidebar::-webkit-scrollbar { width: 6px; }
+        .admin-sidebar::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
+        .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+        .sidebar-brand { padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 30px; text-align: center; }
+        .sidebar-brand h2 { font-size: 1.6em; margin: 0 0 5px 0; }
+        .sidebar-brand p { font-size: 0.75em; margin: 0; opacity: 0.8; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu a { display: block; padding: 12px 25px; color: rgba(255,255,255,0.85); text-decoration: none; transition: all 0.3s ease; border-left: 4px solid transparent; font-size: 0.95em; }
+        .sidebar-menu a:hover { background-color: rgba(255,255,255,0.1); border-left-color: white; color: white; }
+        .sidebar-menu a.active { background-color: rgba(255,255,255,0.2); border-left-color: white; color: white; font-weight: 600; }
+        .sidebar-divider { margin: 20px 0; border-top: 1px solid rgba(255,255,255,0.15); }
+        .admin-main { margin-left: 280px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .admin-topbar { background: white; padding: 20px 30px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .topbar-title h1 { font-size: 1.8em; margin: 0; color: #333; }
+        .topbar-bread { font-size: 0.9em; color: #999; margin-top: 5px; }
+        .admin-content { flex: 1; overflow-y: auto; padding: 30px; }
+        .content-header { background: white; padding: 25px; border-radius: 10px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .content-header h2 { margin: 0; }
+        .btn-add { padding: 10px 20px; font-weight: 600; }
+        .table-responsive { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+        .table { margin-bottom: 0; }
+        .table thead { background-color: #f8f9fa; border-bottom: 2px solid #e9ecef; }
+        .table th { padding: 18px 15px; font-weight: 600; color: #333; border: none; }
+        .table td { padding: 15px; border-color: #e9ecef; }
+        .table tbody tr:hover { background-color: #f8f9fa; }
+        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-sm { padding: 6px 12px; font-size: 0.85em; }
+        .empty-state { text-align: center; padding: 60px 30px; color: #999; }
+        .empty-state i { font-size: 3em; margin-bottom: 20px; color: #ddd; display: block; }
+        .alert { border-radius: 10px; border: none; }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand"><h2><i class="fas fa-book"></i> BookWeb</h2><p>Admin Panel</p></div>
+            <ul class="sidebar-menu"><li><a href="/admin/dashboard"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li></ul>
+            <div class="sidebar-divider"></div>
+            <p style="padding: 0 25px; font-size: 0.85em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin: 0 0 15px 0;">Quản Lý Nội Dung</p>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/books" class="active"><i class="fas fa-book-open me-2"></i>Sách</a></li>
+                <li><a href="/admin/categories"><i class="fas fa-list me-2"></i>Danh Mục</a></li>
+                <li><a href="/admin/authors"><i class="fas fa-user-edit me-2"></i>Tác Giả</a></li>
+            </ul>
+            <div class="sidebar-divider"></div>
+            <p style="padding: 0 25px; font-size: 0.85em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin: 0 0 15px 0;">Quản Lý Bán Hàng</p>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/orders"><i class="fas fa-shopping-cart me-2"></i>Đơn Hàng</a></li>
+                <li><a href="/admin/reviews"><i class="fas fa-star me-2"></i>Nhận Xét</a></li>
+                <li><a href="/admin/users"><i class="fas fa-users me-2"></i>Người Dùng</a></li>
+            </ul>
+        </aside>
+        
+        <!-- Main -->
+        <div class="admin-main">
+            <div class="admin-topbar">
+                <div class="topbar-title"><h1><i class="fas fa-book-open me-2"></i>Quản Lý Sách</h1><div class="topbar-bread">Admin / Sách</div></div>
+            </div>
+            
+            <div class="admin-content">
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <div class="content-header">
+                    <h2><i class="fas fa-list me-2"></i>Danh Sách Sách</h2>
+                    <a href="/admin/books/create" class="btn btn-primary btn-add"><i class="fas fa-plus me-2"></i>Thêm Sách</a>
+                </div>
+                
+                <div class="table-responsive" th:if="${books != null && books.size() > 0}">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tiêu Đề</th>
+                                <th>Tác Giả</th>
+                                <th>Danh Mục</th>
+                                <th>Giá</th>
+                                <th>Kho</th>
+                                <th>Trạng Thái</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="book : ${books}">
+                                <td><strong th:text="${book.title}"></strong></td>
+                                <td th:text="${book.authorName ?: 'N/A'}"></td>
+                                <td th:text="${book.categoryName ?: 'N/A'}"></td>
+                                <td style="color: #0066CC; font-weight: 700;" th:text="'₫' + ${#numbers.formatInteger(book.finalPrice ?: book.price, 0)}"></td>
+                                <td th:text="${book.stock ?: 0}"></td>
+                                <td><span class="badge" th:classappend="${book.status == 'active' ? 'bg-success' : 'bg-warning'}" th:text="${book.status == 'active' ? 'Hoạt Động' : 'Không Hoạt Động'}"></span></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a th:href="'/admin/books/edit/' + ${book.id}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Sửa</a>
+                                        <a th:href="'/admin/books/delete/' + ${book.id}" class="btn btn-sm btn-danger" onclick="return confirm('Xóa sách này?');"><i class="fas fa-trash"></i> Xóa</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="empty-state" th:unless="${books != null && books.size() > 0}">
+                    <i class="fas fa-inbox"></i>
+                    <h4>Chưa có sách</h4>
+                    <p>Bắt đầu bằng cách <a href="/admin/books/create">thêm sách mới</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

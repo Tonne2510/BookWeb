@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - BookWeb</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        
+        .admin-wrapper { display: flex; height: 100vh; }
+        .admin-sidebar { 
+            width: 280px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; 
+            padding: 30px 0;
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+        }
+        
+        .admin-sidebar::-webkit-scrollbar { width: 6px; }
+        .admin-sidebar::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); }
+        .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 3px; }
+        
+        .sidebar-brand {
+            padding: 20px 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .sidebar-brand h2 { font-size: 1.6em; margin: 0 0 5px 0; }
+        .sidebar-brand p { font-size: 0.75em; margin: 0; opacity: 0.8; }
+        
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu li { margin: 0; }
+        .sidebar-menu a {
+            display: block;
+            padding: 12px 25px;
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            font-size: 0.95em;
+        }
+        .sidebar-menu a:hover {
+            background-color: rgba(255,255,255,0.1);
+            border-left-color: white;
+            color: white;
+        }
+        .sidebar-menu a.active {
+            background-color: rgba(255,255,255,0.2);
+            border-left-color: white;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .sidebar-divider {
+            margin: 20px 0;
+            border-top: 1px solid rgba(255,255,255,0.15);
+        }
+        
+        .admin-main {
+            margin-left: 280px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .admin-topbar {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .topbar-title h1 { font-size: 1.8em; margin: 0; color: #333; }
+        .topbar-bread { font-size: 0.9em; color: #999; margin-top: 5px; }
+        
+        .admin-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            text-align: center;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stat-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #333;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #999;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-card.books { --color: #667eea; }
+        .stat-card.categories { --color: #764ba2; }
+        .stat-card.authors { --color: #f093fb; }
+        .stat-card.orders { --color: #4facfe; }
+        
+        .stat-card.books .stat-icon { color: #667eea; }
+        .stat-card.categories .stat-icon { color: #764ba2; }
+        .stat-card.authors .stat-icon { color: #f093fb; }
+        .stat-card.orders .stat-icon { color: #4facfe; }
+        
+        .welcome-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .welcome-section h2 { margin: 0 0 10px 0; font-size: 1.8em; }
+        .welcome-section p { margin: 0; opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <h2><i class="fas fa-book"></i> BookWeb</h2>
+                <p>Admin Panel</p>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="/admin/dashboard" class="active"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
+            </ul>
+            
+            <div class="sidebar-divider"></div>
+            
+            <p style="padding: 0 25px; font-size: 0.85em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin: 0 0 15px 0;">Quản Lý Nội Dung</p>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/books"><i class="fas fa-book-open me-2"></i>Sách</a></li>
+                <li><a href="/admin/categories"><i class="fas fa-list me-2"></i>Danh Mục</a></li>
+                <li><a href="/admin/authors"><i class="fas fa-user-edit me-2"></i>Tác Giả</a></li>
+            </ul>
+            
+            <div class="sidebar-divider"></div>
+            
+            <p style="padding: 0 25px; font-size: 0.85em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin: 0 0 15px 0;">Quản Lý Bán Hàng</p>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/orders"><i class="fas fa-shopping-cart me-2"></i>Đơn Hàng</a></li>
+                <li><a href="/admin/reviews"><i class="fas fa-star me-2"></i>Nhận Xét</a></li>
+                <li><a href="/admin/users"><i class="fas fa-users me-2"></i>Người Dùng</a></li>
+            </ul>
+            
+            <div class="sidebar-divider"></div>
+            
+            <ul class="sidebar-menu" style="margin-top: 40px;">
+                <li><a href="/auth/profile"><i class="fas fa-user-circle me-2"></i>Hồ Sơ Của Tôi</a></li>
+                <li><a href="/auth/logout"><i class="fas fa-sign-out-alt me-2"></i>Đăng Xuất</a></li>
+            </ul>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Bar -->
+            <div class="admin-topbar">
+                <div class="topbar-title">
+                    <h1><i class="fas fa-chart-line me-2"></i>Dashboard</h1>
+                    <div class="topbar-bread">Admin / Dashboard</div>
+                </div>
+                <div>
+                    <i class="fas fa-bell" style="font-size: 1.5em; cursor: pointer; color: #999;"></i>
+                </div>
+            </div>
+            
+            <!-- Content Area -->
+            <div class="admin-content">
+                <div class="welcome-section">
+                    <h2>Xin chào Admin!</h2>
+                    <p>Chào mừng đến Dashboard quản trị BookWeb. Dưới đây là tóm tắt dữ liệu hệ thống của bạn.</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card books">
+                            <div class="stat-icon"><i class="fas fa-book-open"></i></div>
+                            <div class="stat-value" th:text="${totalBooks ?: 0}">0</div>
+                            <div class="stat-label">Sách</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card categories">
+                            <div class="stat-icon"><i class="fas fa-list"></i></div>
+                            <div class="stat-value" th:text="${totalCategories ?: 0}">0</div>
+                            <div class="stat-label">Danh Mục</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card authors">
+                            <div class="stat-icon"><i class="fas fa-user-edit"></i></div>
+                            <div class="stat-value" th:text="${totalAuthors ?: 0}">0</div>
+                            <div class="stat-label">Tác Giả</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card orders">
+                            <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                            <div class="stat-value" th:text="${totalOrders ?: 0}">0</div>
+                            <div class="stat-label">Đơn Hàng</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

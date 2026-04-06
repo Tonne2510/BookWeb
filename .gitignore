@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build output
+target/
+*.jar
+*.jar.original
+*.class
+
+# Environment
+.env
+.env.prod
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ML model artifacts
+*.onnx
+
+# Uploads (user data)
+uploads/

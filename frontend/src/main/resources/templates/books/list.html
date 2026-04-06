@@ -1,0 +1,671 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sách - BookWeb</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .books-page {
+            background-color: #f5f5f5;
+            padding: 30px 0;
+            min-height: 80vh;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #0066CC 0%, #1A73E8 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 2.5em;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        /* Filter Sidebar */
+        .filter-sidebar {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 20px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .filter-section {
+            margin-bottom: 25px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 20px;
+        }
+
+        .filter-section:last-child {
+            border-bottom: none;
+        }
+
+        .filter-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-checkbox input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #0066CC;
+        }
+
+        .filter-checkbox label {
+            margin: 0;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.2s;
+        }
+
+        .filter-checkbox:hover label {
+            color: #0066CC;
+        }
+
+        .filter-range {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-range input {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #0066CC;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .bt-filter-clear {
+            width: 100%;
+            background-color: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            color: #333;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .bt-filter-clear:hover {
+            background-color: #e0e0e0;
+        }
+
+        .bt-filter-submit {
+            width: 100%;
+            background-color: #0066CC;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .bt-filter-submit:hover {
+            background-color: #1A73E8;
+        }
+
+        /* Products Section */
+        .products-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .products-count {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sort-controls select {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 0.9rem;
+        }
+
+        /* Product Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .product-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .product-image-wrapper {
+            position: relative;
+            overflow: hidden;
+            background: #f5f5f5;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .product-image-wrapper img {
+            transform: scale(1.08);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 700;
+            z-index: 2;
+        }
+
+        .product-body {
+            padding: 12px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-title {
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            line-height: 1.3;
+            min-height: 2.6em;
+        }
+
+        .product-author {
+            font-size: 0.8em;
+            color: #999;
+            margin-bottom: 6px;
+        }
+
+        .product-rating {
+            margin-bottom: 6px;
+            font-size: 0.8em;
+        }
+
+        .product-rating .stars {
+            color: #ffd700;
+        }
+
+        .product-rating .count {
+            color: #999;
+            margin-left: 3px;
+        }
+
+        .product-price {
+            margin-bottom: 10px;
+            flex-grow: 1;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+            font-size: 0.8em;
+            margin-right: 8px;
+        }
+
+        .final-price {
+            color: #ff6b6b;
+            font-size: 1em;
+            font-weight: 700;
+        }
+
+        .product-card .btn-add {
+            background-color: #0066CC;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .product-card .btn-add:hover {
+            background-color: #1A73E8;
+        }
+
+        /* Pagination */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .pagination {
+            gap: 5px;
+        }
+
+        .page-link {
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            color: #0066CC;
+            padding: 8px 12px;
+            transition: all 0.3s;
+        }
+
+        .page-link:hover {
+            background-color: #0066CC;
+            color: white;
+        }
+
+        .page-link.active {
+            background-color: #0066CC;
+            border-color: #0066CC;
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+                gap: 12px;
+            }
+
+            .filter-sidebar {
+                margin-bottom: 30px;
+                position: static;
+                max-height: none;
+            }
+
+            .products-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .page-header h1 {
+                font-size: 1.8em;
+            }
+
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 10px;
+            }
+
+            .products-header {
+                flex-direction: column;
+            }
+
+            .sort-controls {
+                flex-direction: column;
+            }
+
+            .sort-controls select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-book me-2"></i>Danh Sách Sách</h1>
+            <p th:if="${searchTerm != null}" style="margin: 5px 0 0;">Kết quả tìm kiếm: "<span th:text="${searchTerm}"></span>"</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="books-page">
+        <div class="container">
+            <div class="row">
+                <!-- Left Sidebar - Filters -->
+                <div class="col-lg-3 col-md-4">
+                    <div class="filter-sidebar">
+                        <h5 style="margin-bottom: 20px; color: #0066CC; font-weight: 700;"><i class="fas fa-sliders-h me-2"></i>Bộ Lọc</h5>
+
+                        <form method="get" action="/books" id="filterForm">
+                            <!-- Search -->
+                            <div class="filter-section">
+                                <input type="text" name="search" class="search-input" placeholder="Tìm kiếm..." th:value="${searchTerm ?: ''}">
+                            </div>
+
+                            <!-- Category Filter -->
+                            <div class="filter-section" th:if="${categories != null and !categories.isEmpty()}">
+                                <div class="filter-title">
+                                    <i class="fas fa-tag" style="color: #0066CC;"></i>
+                                    Thể loại
+                                </div>
+                                <select name="categoryId" class="form-select form-select-sm">
+                                    <option value="">Tất cả thể loại</option>
+                                    <option th:each="cat : ${categories}"
+                                            th:value="${cat.id}"
+                                            th:text="${cat.name}"
+                                            th:selected="${selectedCategoryId != null and selectedCategoryId == cat.id}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Author Filter -->
+                            <div class="filter-section" th:if="${authors != null and !authors.isEmpty()}">
+                                <div class="filter-title">
+                                    <i class="fas fa-user-edit" style="color: #0066CC;"></i>
+                                    Tác giả
+                                </div>
+                                <select name="authorId" class="form-select form-select-sm">
+                                    <option value="">Tất cả tác giả</option>
+                                    <option th:each="author : ${authors}"
+                                            th:value="${author.id}"
+                                            th:text="${author.name}"
+                                            th:selected="${selectedAuthorId != null and selectedAuthorId == author.id}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Price Range -->
+                            <div class="filter-section">
+                                <div class="filter-title">
+                                    <i class="fas fa-money-bill-wave" style="color: #0066CC;"></i>
+                                    Giá tiền
+                                </div>
+                                <div class="filter-range">
+                                    <input type="number" name="minPrice" placeholder="Min" th:value="${minPrice ?: 0}">
+                                    <span>-</span>
+                                    <input type="number" name="maxPrice" placeholder="Max" th:value="${maxPrice ?: 1000000}">
+                                </div>
+                            </div>
+
+                            <!-- Sort -->
+                            <div class="filter-section">
+                                <div class="filter-title">
+                                    <i class="fas fa-sort" style="color: #0066CC;"></i>
+                                    Sắp xếp
+                                </div>
+                                <div class="filter-group">
+                                    <label class="filter-checkbox">
+                                        <input type="radio" name="sortBy" value="createdAt" th:checked="${sortBy == 'createdAt' or sortBy == null}">
+                                        <span>Mới nhất</span>
+                                    </label>
+                                    <label class="filter-checkbox">
+                                        <input type="radio" name="sortBy" value="title" th:checked="${sortBy == 'title'}">
+                                        <span>Tiêu đề (A-Z)</span>
+                                    </label>
+                                    <label class="filter-checkbox">
+                                        <input type="radio" name="sortBy" value="price" th:checked="${sortBy == 'price'}">
+                                        <span>Giá tiền</span>
+                                    </label>
+                                    <label class="filter-checkbox">
+                                        <input type="radio" name="sortBy" value="rating" th:checked="${sortBy == 'rating'}">
+                                        <span>Xếp hạng</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Order -->
+                            <div class="filter-section">
+                                <div class="filter-title">
+                                    <i class="fas fa-arrow-up-down" style="color: #0066CC;"></i>
+                                    Thứ tự
+                                </div>
+                                <div class="filter-group">
+                                    <label class="filter-checkbox">
+                                        <input type="radio" name="order" value="DESC" th:checked="${order == 'DESC' or order == null}">
+                                        <span>Giảm dần</span>
+                                    </label>
+                                    <label class="filter-checkbox">
+                                        <input type="radio" name="order" value="ASC" th:checked="${order == 'ASC'}">
+                                        <span>Tăng dần</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Hidden page parameter -->
+                            <input type="hidden" name="page" value="1">
+                            <input type="hidden" name="limit" value="12">
+
+                            <!-- Buttons -->
+                            <button type="reset" class="bt-filter-clear">
+                                <i class="fas fa-redo me-2"></i>Xóa Bộ Lọc
+                            </button>
+                            <button type="submit" class="bt-filter-submit">
+                                <i class="fas fa-search me-2"></i>Lọc Sách
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Section - Products -->
+                <div class="col-lg-9 col-md-8">
+                    <div class="products-section">
+                        <!-- Products Header -->
+                        <div class="products-header">
+                            <div class="products-count" th:if="${books != null and books.size() > 0}">
+                                <strong>Tìm thấy <span th:text="${books.size()}"></span> sách</strong>
+                            </div>
+                            <div class="sort-controls">
+                                <select onchange="changeSortBy(this.value)" id="sortBySelect" th:value="${sortBy}">
+                                    <option value="">Sắp xếp theo...</option>
+                                    <option value="createdAt" th:selected="${sortBy == 'createdAt'}">Mới nhất</option>
+                                    <option value="title" th:selected="${sortBy == 'title'}">Tiêu đề (A-Z)</option>
+                                    <option value="price" th:selected="${sortBy == 'price'}">Giá tiền</option>
+                                    <option value="rating" th:selected="${sortBy == 'rating'}">Xếp hạng</option>
+                                </select>
+                                <select onchange="changeOrder(this.value)" id="orderSelect" th:value="${order}">
+                                    <option value="DESC" th:selected="${order == 'DESC' or order == null}">Giảm dần ↓</option>
+                                    <option value="ASC" th:selected="${order == 'ASC'}">Tăng dần ↑</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Products Grid -->
+                        <div class="products-grid" th:if="${books != null and books.size() > 0}">
+                            <div class="product-card" th:each="book : ${books}">
+                                <a th:href="'/books/' + ${book.slug}" style="text-decoration: none; color: inherit; height: 100%; display: flex; flex-direction: column;">
+                                    <div class="product-image-wrapper">
+                                        <img th:src="${book.coverImage}" alt="Book Cover">
+                                        <div class="product-badge" th:if="${book.discount > 0}">
+                                            -<span th:text="${book.discount}"></span>%
+                                        </div>
+                                    </div>
+                                    <div class="product-body">
+                                        <h5 class="product-title" th:text="${book.title}">Book Title</h5>
+                                        <p class="product-author" th:text="${'Tác giả: ' + book.authorName}">Author</p>
+                                        <div class="product-rating">
+                                            <span class="stars">
+                                                <i class="fas fa-star"></i>
+                                                <span class="count" th:text="'(' + ${book.rating ?: 0} + ')'">Rating</span>
+                                            </span>
+                                        </div>
+                                        <div class="product-price">
+                                            <span class="final-price" th:text="'₫' + ${#numbers.formatInteger(book.finalPrice, 0)}">Price</span>
+                                            <span class="original-price" th:if="${book.discount > 0}" th:text="'₫' + ${#numbers.formatInteger(book.price, 0)}">Original</span>
+                                        </div>
+                                        <button type="button" class="btn-add" th:data-book-id="${book.id}" onclick="addToCart(this)">
+                                            <i class="fas fa-shopping-cart me-1"></i>Mua
+                                        </button>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- No Results -->
+                        <div th:if="${books == null or books.size() == 0}" style="text-align: center; padding: 60px 20px;">
+                            <i class="fas fa-search" style="font-size: 4em; color: #e0e0e0; margin-bottom: 20px;"></i>
+                            <h3 style="color: #666;">Không tìm thấy sách</h3>
+                            <p style="color: #999;">Vui lòng thử lại với các bộ lọc khác</p>
+                            <a href="/books" class="btn" style="background-color: #0066CC; color: white; margin-top: 20px;">
+                                <i class="fas fa-home me-2"></i>Về trang sách
+                            </a>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="pagination-container" th:if="${books != null and books.size() > 0}">
+                            <nav>
+                                <ul class="pagination">
+                                    <li class="page-item" th:if="${page > 1}">
+                                        <a class="page-link" th:href="'/books?page=' + ${page - 1} + '&limit=' + ${limit} + '&search=' + ${searchTerm ?: ''} + '&sortBy=' + ${sortBy ?: 'createdAt'} + '&order=' + ${order ?: 'DESC'} + (${selectedCategoryId != null} ? '&categoryId=' + ${selectedCategoryId} : '') + (${selectedAuthorId != null} ? '&authorId=' + ${selectedAuthorId} : '') + (${minPrice != null} ? '&minPrice=' + ${minPrice} : '') + (${maxPrice != null} ? '&maxPrice=' + ${maxPrice} : '')" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    <li class="page-item active">
+                                        <span class="page-link" th:text="${page}"></span>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" th:href="'/books?page=' + ${page + 1} + '&limit=' + ${limit} + '&search=' + ${searchTerm ?: ''} + '&sortBy=' + ${sortBy ?: 'createdAt'} + '&order=' + ${order ?: 'DESC'} + (${selectedCategoryId != null} ? '&categoryId=' + ${selectedCategoryId} : '') + (${selectedAuthorId != null} ? '&authorId=' + ${selectedAuthorId} : '') + (${minPrice != null} ? '&minPrice=' + ${minPrice} : '') + (${maxPrice != null} ? '&maxPrice=' + ${maxPrice} : '')">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        var isLoggedIn = /*[[${session.token != null}]]*/ false;
+    </script>
+    <script>
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param) || '';
+        }
+
+        function buildFilterURL() {
+            const sortBy = document.getElementById('sortBySelect').value || 'createdAt';
+            const order = document.getElementById('orderSelect').value || 'DESC';
+            const search = getQueryParam('search');
+
+            let url = '/books?page=1&limit=' + (getQueryParam('limit') || '12');
+            if (search) url += '&search=' + encodeURIComponent(search);
+            url += '&sortBy=' + sortBy;
+            url += '&order=' + order;
+
+            return url;
+        }
+
+        function changeSortBy(value) {
+            if (value) {
+                document.getElementById('sortBySelect').value = value;
+                window.location.href = buildFilterURL();
+            }
+        }
+
+        function changeOrder(value) {
+            if (value) {
+                document.getElementById('orderSelect').value = value;
+                window.location.href = buildFilterURL();
+            }
+        }
+
+        function addToCart(btn) {
+            if (!isLoggedIn) {
+                if (confirm('Bạn cần đăng nhập để thêm vào giỏ hàng. Chuyển đến trang đăng nhập?')) {
+                    window.location.href = '/auth/login';
+                }
+                return;
+            }
+            var bookId = btn.getAttribute('data-book-id');
+            if (!bookId) {
+                alert('Không thể thêm sản phẩm này.');
+                return;
+            }
+            fetch('/cart/add/' + bookId + '/1/0', { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        alert('Đã thêm vào giỏ hàng!');
+                    } else {
+                        alert('Lỗi: ' + (data.message || 'Không thể thêm vào giỏ'));
+                    }
+                });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!-- Hero Banner -->
+<div class="hero-banner">
+    <div class="container">
+        <h1><i class="fas fa-book me-3" style="color: #ffd700;"></i>Khám Phá Thế Giới Sách</h1>
+        <p>Hơn 100,000 đầu sách từ các tác giả nổi tiếng trên toàn thế giới</p>
+        <div class="hero-buttons">
+            <a href="/books" class="btn btn-primary btn-lg me-3" style="background-color: white; color: #0066CC; border: none; font-weight: 700;">Mua Sắm Ngay</a>
+            <a href="/books?category=hot" class="btn btn-outline-light btn-lg" style="border: 2px solid white;">Sách Hot Nhất</a>
+        </div>
+    </div>
+</div>
+
+<!-- Hot Deals Banner -->
+<div class="hot-deals-banner">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <h3 style="margin: 0; color: white;"><i class="fas fa-fire me-2" style="color: #ffd700;"></i>Khuyến Mãi Hot</h3>
+            </div>
+            <div class="col-md-8 text-end">
+                <span style="color: white; font-size: 0.9rem;">Giảm giá lên đến <strong>50%</strong> cho sách được chọn</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Featured Books Section -->
+<section style="padding: 40px 0; background: white;">
+    <div class="container">
+        <div class="section-header">
+            <h2 style="margin: 0;"><i class="fas fa-star me-2" style="color: #ffd700;"></i>Sách Nổi Bật</h2>
+            <p style="color: #666; margin-top: 5px;">Những cuốn sách được yêu thích nhất của khách hàng</p>
+        </div>
+
+        <div class="row">
+            <div th:each="book : ${featuredBooks}" class="col-lg-3 col-md-6 mb-4">
+                <div class="book-card">
+                    <div class="book-image-wrapper" style="position: relative;">
+                        <img th:src="${book.coverImage}" th:alt="${book.title}" class="book-image" style="width: 100%; height: 280px; object-fit: cover; border-radius: 8px;">
+                        <div class="book-rating" style="position: absolute; top: 10px; right: 10px; background: #ffd700; color: #333; padding: 5px 10px; border-radius: 4px; font-weight: 700;">★ <span th:text="${book.rating}"></span></div>
+                        <div th:if="${book.discount != null && book.discount > 0}" style="position: absolute; top: 10px; left: 10px; background: #ff4444; color: white; padding: 5px 10px; border-radius: 4px; font-weight: 700;">
+                            <span th:text="'-' + ${#numbers.formatDecimal(book.discount, 0, 'COMMA', 0, 'POINT')} + '%'"></span>
+                        </div>
+                    </div>
+                    <div class="book-info">
+                        <h5 class="book-title" th:text="${book.title}"></h5>
+                        <p class="book-author" style="color: #666; font-size: 0.9rem;" th:text="${book.authorName}"></p>
+                        <div class="book-price" style="margin: 10px 0;">
+                            <div th:if="${book.discount != null && book.discount > 0}">
+                                <span style="text-decoration: line-through; color: #999; font-size: 0.9rem;" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                                <br/>
+                                <span style="font-size: 1.3em; color: #ff4444; font-weight: 700;" th:text="${#numbers.formatDecimal(book.finalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                            </div>
+                            <div th:unless="${book.discount != null && book.discount > 0}">
+                                <span style="font-size: 1.3em; color: #0066CC; font-weight: 700;" th:text="${#numbers.formatDecimal(book.finalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                            </div>
+                        </div>
+                        <a th:href="'/books/' + ${book.slug}" class="btn btn-sm btn-primary mb-2" style="width: 100%; background-color: #0066CC; border: none;">Xem Chi Tiết</a>
+                        <button class="btn btn-sm btn-outline-primary add-to-cart-btn" style="width: 100%;"
+                                th:data-id="${book.id}" 
+                                th:data-price="${book.finalPrice}"
+                                th:data-title="${book.title}"
+                                th:data-image="${book.coverImage}">
+                            <i class="fas fa-cart-plus me-1"></i>Thêm vào giỏ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Hot Deals Section -->
+<section style="padding: 40px 0; background: #f5f5f5;">
+    <div class="container">
+        <div class="section-header">
+            <h2 style="margin: 0;"><i class="fas fa-fire me-2" style="color: #ff6b6b;"></i>Sách Giảm Giá</h2>
+            <p style="color: #666; margin-top: 5px;">Cơ hội vàng để sở hữu những cuốn sách yêu thích</p>
+        </div>
+
+        <div class="row">
+            <div th:each="book : ${dealsBooks}" class="col-lg-3 col-md-6 mb-4">
+                <div class="book-card" style="border: 2px solid #ff6b6b;">
+                    <div class="book-image-wrapper" style="position: relative;">
+                        <img th:src="${book.coverImage}" th:alt="${book.title}" class="book-image" style="width: 100%; height: 280px; object-fit: cover; border-radius: 8px;">
+                        <div th:if="${book.discount != null && book.discount > 0}" style="position: absolute; top: 10px; right: 10px; background: #ff6b6b; color: white; padding: 5px 10px; border-radius: 4px; font-weight: 700;">
+                            <span th:text="'-' + ${#numbers.formatDecimal(book.discount, 0, 'COMMA', 0, 'POINT')} + '%'"></span>
+                        </div>
+                    </div>
+                    <div class="book-info">
+                        <h5 class="book-title" th:text="${book.title}"></h5>
+                        <p class="book-author" style="color: #666; font-size: 0.9rem;" th:text="${book.authorName}"></p>
+                        <div class="book-price" style="margin: 10px 0;">
+                            <div th:if="${book.discount != null && book.discount > 0}">
+                                <span style="text-decoration: line-through; color: #999; font-size: 0.9rem;" th:text="${#numbers.formatDecimal(book.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                                <br/>
+                                <span style="font-size: 1.3em; color: #ff6b6b; font-weight: 700;" th:text="${#numbers.formatDecimal(book.finalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                            </div>
+                            <div th:unless="${book.discount != null && book.discount > 0}">
+                                <span style="font-size: 1.3em; color: #ff6b6b; font-weight: 700;" th:text="${#numbers.formatDecimal(book.finalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                            </div>
+                        </div>
+                        <a th:href="'/books/' + ${book.slug}" class="btn btn-sm btn-danger mb-2" style="width: 100%; background-color: #ff6b6b; border: none;">Mua Ngay</a>
+                        <button class="btn btn-sm btn-outline-danger add-to-cart-btn" style="width: 100%;"
+                                th:data-id="${book.id}" 
+                                th:data-price="${book.finalPrice}"
+                                th:data-title="${book.title}"
+                                th:data-image="${book.coverImage}">
+                            <i class="fas fa-cart-plus me-1"></i>Thêm vào giỏ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Promo Banner -->
+<section style="padding: 60px 0; background: linear-gradient(135deg, #0066CC 0%, #1A73E8 100%); color: white; text-align: center;">
+    <div class="container">
+        <h3 style="font-size: 2em; margin-bottom: 20px;">Ưu Đãi Đặc Biệt Cho Thành Viên Mới</h3>
+        <p style="font-size: 1.1em; margin-bottom: 30px;">Tạo tài khoản ngay và nhận mã giảm giá 20% cho đơn hàng đầu tiên</p>
+        <a href="/auth/register" class="btn btn-light btn-lg" style="color: #0066CC; font-weight: 700;">Đăng Ký Mới</a>
+    </div>
+</section>
+
+<!-- Why Choose Us Section -->
+<section style="padding: 40px 0; background: white;">
+    <div class="container">
+        <div class="section-header">
+            <h2 style="margin: 0;"><i class="fas fa-check-circle me-2"></i>Tại Sao Chọn BookWeb</h2>
+        </div>
+
+        <div class="row text-center">
+            <div class="col-md-3 mb-3">
+                <div style="padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <i class="fas fa-shipping-fast" style="font-size: 3em; color: #0066CC; margin: 15px 0;"></i>
+                    <h5 style="color: #333; font-weight: 700;">Giao Hàng Nhanh</h5>
+                    <p style="color: #666;">Giao hàng miễn phí từ 50,000₫</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div style="padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <i class="fas fa-shield-alt" style="font-size: 3em; color: #0066CC; margin: 15px 0;"></i>
+                    <h5 style="color: #333; font-weight: 700;">Thanh Toán Bảo Mật</h5>
+                    <p style="color: #666;">Nhiều hình thức thanh toán</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div style="padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <i class="fas fa-undo" style="font-size: 3em; color: #0066CC; margin: 15px 0;"></i>
+                    <h5 style="color: #333; font-weight: 700;">Đổi Trả Dễ Dàng</h5>
+                    <p style="color: #666;">90 ngày hoàn lại tiền</p>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div style="padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <i class="fas fa-headset" style="font-size: 3em; color: #0066CC; margin: 15px 0;"></i>
+                    <h5 style="color: #333; font-weight: 700;">Hỗ Trợ 24/7</h5>
+                    <p style="color: #666;">Đội hỗ trợ khách hàng nhiệt tình</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script th:inline="javascript">
+    var isLoggedIn = /*[[${session.token != null}]]*/ false;
+</script>
+<script>
+document.querySelectorAll('.add-to-cart-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        if (!isLoggedIn) {
+            if (confirm('Bạn cần đăng nhập để thêm vào giỏ hàng. Chuyển đến trang đăng nhập?')) {
+                window.location.href = '/auth/login';
+            }
+            return;
+        }
+        var bookId = this.dataset.id;
+        var price = this.dataset.price;
+        var title = encodeURIComponent(this.dataset.title);
+        var image = encodeURIComponent(this.dataset.image || '');
+        fetch('/cart/add/' + bookId + '/1/' + price + '?title=' + title + '&coverImage=' + image, { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    alert('Đã thêm vào giỏ hàng!');
+                    location.reload();
+                }
+            });
+    });
+});
+</script>

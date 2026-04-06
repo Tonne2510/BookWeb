@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi Tiết Đơn Hàng - BookWeb Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        .admin-wrapper { display: flex; height: 100vh; }
+        .admin-sidebar { width: 280px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 0; position: fixed; left: 0; top: 0; height: 100vh; overflow-y: auto; box-shadow: 2px 0 15px rgba(0,0,0,0.1); }
+        .sidebar-brand { padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 30px; text-align: center; }
+        .sidebar-brand h2 { font-size: 1.6em; margin: 0 0 5px 0; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu a { display: block; padding: 12px 25px; color: rgba(255,255,255,0.85); text-decoration: none; transition: all 0.3s ease; border-left: 4px solid transparent; font-size: 0.95em; }
+        .sidebar-menu a:hover { background-color: rgba(255,255,255,0.1); border-left-color: white; color: white; }
+        .sidebar-menu a.active { background-color: rgba(255,255,255,0.2); border-left-color: white; color: white; font-weight: 600; }
+        .sidebar-divider { margin: 20px 0; border-top: 1px solid rgba(255,255,255,0.15); }
+        .admin-main { margin-left: 280px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .admin-topbar { background: white; padding: 20px 30px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .topbar-title h1 { font-size: 1.8em; margin: 0; color: #333; }
+        .topbar-bread { font-size: 0.9em; color: #999; margin-top: 5px; }
+        .admin-content { flex: 1; overflow-y: auto; padding: 30px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .info-label { font-weight: 600; color: #555; }
+        .info-value { color: #333; }
+        .price-highlight { font-weight: 700; color: #28a745; }
+        .table { margin-bottom: 0; }
+        .table thead th { background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand"><h2><i class="fas fa-book"></i> BookWeb</h2><p>Admin Panel</p></div>
+            <ul class="sidebar-menu"><li><a href="/admin/dashboard"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li></ul>
+            <div class="sidebar-divider"></div>
+            <p style="padding: 0 25px; font-size: 0.85em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin: 0 0 15px 0;">Quản Lý Nội Dung</p>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/books"><i class="fas fa-book-open me-2"></i>Sách</a></li>
+                <li><a href="/admin/categories"><i class="fas fa-list me-2"></i>Danh Mục</a></li>
+                <li><a href="/admin/authors"><i class="fas fa-user-edit me-2"></i>Tác Giả</a></li>
+            </ul>
+            <div class="sidebar-divider"></div>
+            <p style="padding: 0 25px; font-size: 0.85em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin: 0 0 15px 0;">Quản Lý Bán Hàng</p>
+            <ul class="sidebar-menu">
+                <li><a href="/admin/orders" class="active"><i class="fas fa-shopping-cart me-2"></i>Đơn Hàng</a></li>
+                <li><a href="/admin/reviews"><i class="fas fa-star me-2"></i>Nhận Xét</a></li>
+                <li><a href="/admin/users"><i class="fas fa-users me-2"></i>Người Dùng</a></li>
+            </ul>
+        </aside>
+        
+        <!-- Main -->
+        <div class="admin-main">
+            <div class="admin-topbar">
+                <div class="topbar-title">
+                    <h1><i class="fas fa-receipt me-2"></i>Chi Tiết Đơn Hàng</h1>
+                    <div class="topbar-bread">Admin / Đơn Hàng / Chi Tiết</div>
+                </div>
+                <a href="/admin/orders" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Quay Lại</a>
+            </div>
+            
+            <div class="admin-content">
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i><span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <div class="row">
+                    <!-- Order Info -->
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Thông Tin Đơn Hàng</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="info-row">
+                                    <span class="info-label">Mã Đơn Hàng:</span>
+                                    <span class="info-value" style="font-size: 1.1em; color: #0066CC;" th:text="${order.orderNumber ?: order.id}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Ngày Tạo:</span>
+                                    <span class="info-value" th:text="${order.createdAt}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Trạng Thái:</span>
+                                    <span th:switch="${order.status}">
+                                        <span th:case="'pending'" class="badge bg-warning text-dark">Chưa Xử Lý</span>
+                                        <span th:case="'processing'" class="badge bg-info">Đang Xử Lý</span>
+                                        <span th:case="'shipped'" class="badge bg-primary">Đang Giao</span>
+                                        <span th:case="'delivered'" class="badge bg-success">Đã Giao</span>
+                                        <span th:case="'cancelled'" class="badge bg-danger">Đã Hủy</span>
+                                        <span th:case="*" class="badge bg-secondary" th:text="${order.status}"></span>
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Tổng Tiền:</span>
+                                    <span class="price-highlight" style="font-size: 1.2em;" th:text="'₫' + ${#numbers.formatInteger(order.totalPrice, 0)}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Phương Thức Thanh Toán:</span>
+                                    <span class="info-value" th:text="${order.paymentMethod}"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Info -->
+                        <div class="card shadow-sm mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Thông Tin Khách Hàng</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="info-row">
+                                    <span class="info-label">Tên:</span>
+                                    <span class="info-value" th:text="${order.user != null ? order.user.firstName + ' ' + order.user.lastName : 'N/A'}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Email:</span>
+                                    <span class="info-value" th:text="${order.user != null ? order.user.email : 'N/A'}"></span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Địa Chỉ Giao Hàng:</span>
+                                    <span class="info-value" th:text="${order.shippingAddress ?: 'N/A'}"></span>
+                                </div>
+                                <div th:if="${order.notes}" class="info-row">
+                                    <span class="info-label">Ghi Chú:</span>
+                                    <span class="info-value" th:text="${order.notes}"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Items -->
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-box me-2"></i>Chi Tiết Sản Phẩm</h5>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Sản Phẩm</th>
+                                            <th>Số Lượng</th>
+                                            <th>Giá</th>
+                                            <th>Tổng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="item : ${order.items}">
+                                            <td><strong th:text="${item.bookTitle ?: (item.book != null ? item.book.title : 'N/A')}"></strong></td>
+                                            <td th:text="${item.quantity}"></td>
+                                            <td class="price-highlight" th:text="'₫' + ${#numbers.formatInteger(item.price, 0)}"></td>
+                                            <td><strong class="price-highlight" th:text="'₫' + ${#numbers.formatInteger(item.price * item.quantity, 0)}"></strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Update -->
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Cập Nhật Trạng Thái</h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" th:action="@{/admin/orders/update-status/{id}(id=${order.id})}">
+                                    <div class="mb-3">
+                                        <label for="statusSelect" class="form-label">Chọn Trạng Thái Mới:</label>
+                                        <select class="form-select" id="statusSelect" name="status" required>
+                                            <option value="">-- Chọn Trạng Thái --</option>
+                                            <option value="pending" th:selected="${order.status == 'pending'}">Chưa Xử Lý</option>
+                                            <option value="processing" th:selected="${order.status == 'processing'}">Đang Xử Lý</option>
+                                            <option value="shipped" th:selected="${order.status == 'shipped'}">Đang Giao</option>
+                                            <option value="delivered" th:selected="${order.status == 'delivered'}">Đã Giao</option>
+                                            <option value="cancelled" th:selected="${order.status == 'cancelled'}">Đã Hủy</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-save me-2"></i>Cập Nhật Trạng Thái
+                                    </button>
+                                </form>
+
+                                <hr/>
+
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">Quy Trình Đơn Hàng:</h6>
+                                    <ul class="mb-0 small">
+                                        <li><strong>Chưa Xử Lý:</strong> Đơn hàng vừa được tạo</li>
+                                        <li><strong>Đang Xử Lý:</strong> Nhân viên đang chuẩn bị hàng</li>
+                                        <li><strong>Đang Giao:</strong> Hàng đã được gửi đi</li>
+                                        <li><strong>Đã Giao:</strong> Khách hàng đã nhận hàng</li>
+                                        <li><strong>Đã Hủy:</strong> Đơn hàng bị hủy</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

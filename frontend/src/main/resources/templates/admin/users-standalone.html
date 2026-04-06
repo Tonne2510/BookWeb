@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Người Dùng - BookWeb Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f7fa; }
+        .admin-wrapper { display: flex; min-height: 100vh; }
+        .admin-sidebar { width: 260px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; position: fixed; left: 0; top: 0; height: 100vh; overflow-y: auto; box-shadow: 2px 0 15px rgba(0,0,0,0.1); z-index: 100; }
+        .sidebar-brand { padding: 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.2); text-align: center; }
+        .sidebar-brand h2 { font-size: 1.4em; margin: 0 0 4px 0; }
+        .sidebar-brand p { font-size: 0.8em; margin: 0; opacity: 0.7; }
+        .sidebar-section { padding: 14px 20px 6px; font-size: 0.72em; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.55); }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu li a { display: flex; align-items: center; gap: 10px; padding: 11px 22px; color: rgba(255,255,255,0.82); text-decoration: none; transition: all 0.25s; border-left: 3px solid transparent; font-size: 0.93em; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background: rgba(255,255,255,0.15); border-left-color: #fff; color: #fff; font-weight: 600; }
+        .sidebar-divider { margin: 8px 0; border-top: 1px solid rgba(255,255,255,0.12); }
+        .admin-main { margin-left: 260px; flex: 1; display: flex; flex-direction: column; }
+        .admin-topbar { background: white; padding: 18px 28px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 50; }
+        .topbar-title h1 { font-size: 1.5em; margin: 0; color: #333; font-weight: 700; }
+        .topbar-bread { font-size: 0.82em; color: #aaa; margin-top: 3px; }
+        .admin-content { padding: 28px; flex: 1; }
+        .stat-cards { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+        .stat-card { background: white; border-radius: 10px; padding: 18px 22px; flex: 1; min-width: 120px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 14px; }
+        .stat-icon { width: 46px; height: 46px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3em; color: white; flex-shrink: 0; }
+        .stat-num { font-size: 1.6em; font-weight: 800; color: #333; line-height: 1; }
+        .stat-lbl { font-size: 0.78em; color: #888; margin-top: 3px; }
+        .users-card { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); overflow: hidden; }
+        .users-card-header { padding: 18px 22px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+        .users-card-header h5 { margin: 0; font-weight: 700; color: #333; }
+        .table { margin: 0; }
+        .table thead th { background: #f8f9fa; font-weight: 600; color: #555; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; padding: 14px 16px; border-bottom: 2px solid #e9ecef; }
+        .table tbody td { padding: 13px 16px; vertical-align: middle; border-color: #f3f3f3; }
+        .table tbody tr:hover { background: #fafbfe; }
+        .avatar-circle { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1em; color: white; flex-shrink: 0; }
+        .badge-role { padding: 4px 11px; border-radius: 20px; font-size: 0.78em; font-weight: 600; }
+        .role-admin { background: #ffe0e0; color: #c0392b; }
+        .role-user { background: #e0e8ff; color: #2c5cc5; }
+        .role-moderator { background: #fef3cd; color: #9a6700; }
+        .badge-status { padding: 4px 11px; border-radius: 20px; font-size: 0.78em; font-weight: 600; }
+        .status-active { background: #d4f5e2; color: #1a7a4a; }
+        .status-inactive { background: #fde8e8; color: #c0392b; }
+        .action-btn { padding: 5px 10px; font-size: 0.8em; border-radius: 6px; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; font-weight: 500; }
+        .btn-view { background: #e8f0ff; color: #2c5cc5; }
+        .btn-view:hover { background: #2c5cc5; color: white; }
+        .btn-toggle-on { background: #fef3cd; color: #9a6700; }
+        .btn-toggle-on:hover { background: #e6a817; color: white; }
+        .btn-toggle-off { background: #d4f5e2; color: #1a7a4a; }
+        .btn-toggle-off:hover { background: #1a7a4a; color: white; }
+        .btn-del { background: #fde8e8; color: #c0392b; }
+        .btn-del:hover { background: #c0392b; color: white; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+        .empty-state i { font-size: 3em; margin-bottom: 14px; display: block; }
+        .alert { border-radius: 10px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <h2><i class="fas fa-book me-1"></i> BookWeb</h2>
+            <p>Admin Panel</p>
+        </div>
+        <div class="sidebar-section">Tổng Quan</div>
+        <ul class="sidebar-menu">
+            <li><a href="/admin/dashboard"><i class="fas fa-chart-line"></i>Dashboard</a></li>
+        </ul>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">Quản Lý Nội Dung</div>
+        <ul class="sidebar-menu">
+            <li><a href="/admin/books"><i class="fas fa-book-open"></i>Sách</a></li>
+            <li><a href="/admin/categories"><i class="fas fa-list"></i>Danh Mục</a></li>
+            <li><a href="/admin/authors"><i class="fas fa-user-edit"></i>Tác Giả</a></li>
+        </ul>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section">Quản Lý Bán Hàng</div>
+        <ul class="sidebar-menu">
+            <li><a href="/admin/orders"><i class="fas fa-shopping-cart"></i>Đơn Hàng</a></li>
+            <li><a href="/admin/reviews"><i class="fas fa-star"></i>Nhận Xét</a></li>
+            <li><a href="/admin/users" class="active"><i class="fas fa-users"></i>Người Dùng</a></li>
+        </ul>
+        <div class="sidebar-divider"></div>
+        <ul class="sidebar-menu">
+            <li><a href="/auth/logout"><i class="fas fa-sign-out-alt"></i>Đăng Xuất</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main -->
+    <div class="admin-main">
+        <div class="admin-topbar">
+            <div class="topbar-title">
+                <h1><i class="fas fa-users me-2" style="color:#667eea;"></i>Quản Lý Người Dùng</h1>
+                <div class="topbar-bread">Admin / Người Dùng</div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+
+            <!-- Alerts -->
+            <div th:if="${message}" class="alert alert-success alert-dismissible fade show">
+                <i class="fas fa-check-circle me-2"></i><span th:text="${message}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Stats row -->
+            <div class="stat-cards" th:if="${users != null}">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg,#667eea,#764ba2);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" th:text="${users.size()}">0</div>
+                        <div class="stat-lbl">Tổng Người Dùng</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg,#1a7a4a,#2ecc71);">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num"
+                             th:text="${#lists.size(users.?[status == 'active'])}">0</div>
+                        <div class="stat-lbl">Đang Hoạt Động</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg,#e74c3c,#c0392b);">
+                        <i class="fas fa-user-slash"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num"
+                             th:text="${#lists.size(users.?[status != 'active'])}">0</div>
+                        <div class="stat-lbl">Vô Hiệu Hóa</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg,#e67e22,#f39c12);">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num"
+                             th:text="${#lists.size(users.?[role == 'admin'])}">0</div>
+                        <div class="stat-lbl">Quản Trị Viên</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users table -->
+            <div class="users-card">
+                <div class="users-card-header">
+                    <h5><i class="fas fa-table me-2" style="color:#667eea;"></i>Danh Sách Người Dùng</h5>
+                    <span class="badge bg-secondary" th:if="${users != null}"
+                          th:text="${users.size()} + ' người dùng'"></span>
+                </div>
+
+                <div th:if="${users != null and !users.isEmpty()}">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Người Dùng</th>
+                                    <th>Email</th>
+                                    <th>SĐT</th>
+                                    <th>Vai Trò</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Ngày Đăng Ký</th>
+                                    <th>Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="user, stat : ${users}">
+                                    <td class="text-muted" style="font-size:0.85em;"
+                                        th:text="${stat.index + 1}"></td>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <div class="avatar-circle"
+                                                 th:style="'background: linear-gradient(135deg,' + (${user.role == 'admin'} ? '#e74c3c,#c0392b' : '#667eea,#764ba2') + ');'">
+                                                <span th:text="${user.firstName != null and !user.firstName.isEmpty()} ? ${user.firstName.substring(0,1).toUpperCase()} : 'U'"></span>
+                                            </div>
+                                            <div>
+                                                <div style="font-weight:600; color:#333;"
+                                                     th:text="${user.fullName != null and !user.fullName.isEmpty()} ? ${user.fullName} : (${user.firstName + ' ' + user.lastName})"></div>
+                                                <div style="font-size:0.78em; color:#aaa;" th:text="${user.id}"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td th:text="${user.email}"></td>
+                                    <td th:text="${user.phone != null and !user.phone.isEmpty()} ? ${user.phone} : '—'"></td>
+                                    <td>
+                                        <span class="badge-role"
+                                              th:classappend="${user.role == 'admin'} ? ' role-admin' : (${user.role == 'moderator'} ? ' role-moderator' : ' role-user')">
+                                            <i class="fas me-1"
+                                               th:classappend="${user.role == 'admin'} ? 'fa-crown' : 'fa-user'"></i>
+                                            <span th:text="${user.role == 'admin'} ? 'Admin' : (${user.role == 'moderator'} ? 'Mod' : 'Người dùng')"></span>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge-status"
+                                              th:classappend="${user.status == 'active'} ? ' status-active' : ' status-inactive'"
+                                              th:text="${user.status == 'active'} ? 'Hoạt Động' : 'Vô Hiệu'">
+                                        </span>
+                                    </td>
+                                    <td style="font-size:0.85em; color:#888;" th:text="${user.createdAt}"></td>
+                                    <td>
+                                        <div style="display:flex; gap:5px; flex-wrap:wrap;">
+                                            <!-- View detail -->
+                                            <a th:href="'/admin/users/detail/' + ${user.id}"
+                                               class="action-btn btn-view" title="Xem chi tiết">
+                                                <i class="fas fa-eye"></i> Chi tiết
+                                            </a>
+                                            <!-- Toggle status -->
+                                            <form th:action="'/admin/users/toggle-status/' + ${user.id}"
+                                                  method="POST" style="display:inline;"
+                                                  th:if="${user.role != 'admin'}">
+                                                <button type="submit"
+                                                        th:class="'action-btn ' + (${user.status == 'active'} ? 'btn-toggle-on' : 'btn-toggle-off')"
+                                                        th:title="${user.status == 'active'} ? 'Vô hiệu hóa tài khoản' : 'Kích hoạt tài khoản'"
+                                                        th:onclick="${user.status == 'active'} ? 'return confirm(\'Vô hiệu hóa tài khoản này?\')' : 'return confirm(\'Kích hoạt tài khoản này?\')'">
+                                                    <i class="fas"
+                                                       th:classappend="${user.status == 'active'} ? 'fa-ban' : 'fa-check-circle'"></i>
+                                                    <span th:text="${user.status == 'active'} ? 'Vô hiệu' : 'Kích hoạt'"></span>
+                                                </button>
+                                            </form>
+                                            <!-- Delete -->
+                                            <form th:action="'/admin/users/delete/' + ${user.id}"
+                                                  method="POST" style="display:inline;"
+                                                  th:if="${user.role != 'admin'}">
+                                                <button type="submit" class="action-btn btn-del" title="Xóa tài khoản"
+                                                        onclick="return confirm('Xóa tài khoản này? Hành động không thể hoàn tác!')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="empty-state" th:if="${users == null or users.isEmpty()}">
+                    <i class="fas fa-users"></i>
+                    <h5>Chưa có người dùng nào</h5>
+                    <p style="font-size:0.9em;">Người dùng sẽ xuất hiện khi họ đăng ký tài khoản</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

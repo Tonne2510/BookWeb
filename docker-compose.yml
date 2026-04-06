@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: bookweb-db
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: bookweb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - bookweb-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bookweb-backend
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_NAME: bookweb
+      JWT_SECRET: your_jwt_secret
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mysql
+    networks:
+      - bookweb-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bookweb-frontend
+    environment:
+      GRAPHQL_ENDPOINT: http://backend:4000/graphql
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks:
+      - bookweb-network
+
+volumes:
+  mysql_data:
+
+networks:
+  bookweb-network:
+    driver: bridge

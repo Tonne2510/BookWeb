@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán - BookWeb</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .payment-container {
+            max-width: 520px;
+            width: 100%;
+        }
+
+        .payment-card {
+            background: white;
+            border-radius: 18px;
+            padding: 36px 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .payment-header {
+            margin-bottom: 24px;
+        }
+
+        .payment-header h1 {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .waiting-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff8e6;
+            border: 1.5px solid #f0a500;
+            border-radius: 20px;
+            padding: 6px 16px;
+            color: #b07700;
+            font-weight: 600;
+            font-size: 0.95em;
+            margin-bottom: 20px;
+        }
+
+        .qr-wrapper {
+            border: 3px solid #7b2d8b;
+            border-radius: 14px;
+            overflow: hidden;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(123,45,139,0.2);
+        }
+
+        .qr-wrapper img {
+            display: block;
+            width: 240px;
+            height: 240px;
+        }
+
+        .bank-info {
+            background: #f9f0ff;
+            border: 1.5px solid #ddc8f0;
+            border-radius: 10px;
+            padding: 14px 18px;
+            text-align: left;
+            margin-bottom: 18px;
+        }
+
+        .bank-info .bank-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .bank-info .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.93em;
+        }
+
+        .bank-info .info-row:last-child { margin-bottom: 0; }
+        .bank-info .lbl { color: #666; }
+        .bank-info .val { font-weight: 700; color: #222; }
+
+        .steps {
+            text-align: left;
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 0.88em;
+            color: #444;
+        }
+
+        .steps li { margin-bottom: 5px; list-style: none; }
+
+        /* Paid overlay */
+        #paid-overlay {
+            display: none;
+        }
+
+        .paid-icon {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: pop 0.4s ease;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .paid-icon i { font-size: 2.5em; color: white; }
+
+        .btn-home {
+            display: inline-block;
+            margin-top: 18px;
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1em;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-home:hover { color: white; opacity: 0.9; }
+
+        .timeout-note {
+            margin-top: 16px;
+            font-size: 0.82em;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+<div class="payment-container">
+    <div class="payment-card">
+
+        <!-- Waiting state -->
+        <div id="waiting-section">
+            <div class="payment-header">
+                <h1><i class="fas fa-qrcode me-2" style="color:#7b2d8b;"></i>Quét Mã QR Để Thanh Toán</h1>
+            </div>
+
+            <div class="waiting-badge">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+                Đang chờ xác nhận thanh toán...
+            </div>
+
+            <div class="qr-wrapper">
+                <img th:src="${'https://img.vietqr.io/image/MB-0989402500-compact2.png?amount='
+                              + #numbers.formatInteger(total, 1, 'NONE')
+                              + '&addInfo=BOOKWEB-' + orderId
+                              + '&accountName=NGO+PHU+LAM'}"
+                     alt="VietQR MB" />
+            </div>
+
+            <div class="bank-info">
+                <div class="bank-header">
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/02/Logo-MB-Bank.png"
+                         height="26" alt="MB" style="border-radius:4px;">
+                    <strong style="color:#7b2d8b;">MB Bank</strong>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Số tài khoản:</span>
+                    <span class="val">0989402500</span>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Chủ tài khoản:</span>
+                    <span class="val">NGO PHU LAM</span>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Số tiền:</span>
+                    <span class="val" style="color:#e44;" th:text="'₫' + ${#numbers.formatInteger(total, 0, 'COMMA')}">₫0</span>
+                </div>
+                <div class="info-row">
+                    <span class="lbl">Nội dung CK:</span>
+                    <span class="val" style="color:#7b2d8b;" th:text="'BOOKWEB-' + ${orderId}">BOOKWEB-...</span>
+                </div>
+            </div>
+
+            <ul class="steps">
+                <li><i class="fas fa-check-circle text-success me-2"></i>Mở app ngân hàng bất kỳ → chọn Quét QR</li>
+                <li><i class="fas fa-check-circle text-success me-2"></i>Số tiền và nội dung tự điền sẵn</li>
+                <li><i class="fas fa-check-circle text-success me-2"></i>Xác nhận chuyển khoản trong app</li>
+                <li><i class="fas fa-bolt text-warning me-2"></i>Trang tự chuyển ngay khi phát hiện thanh toán</li>
+            </ul>
+
+            <div class="timeout-note">
+                <i class="fas fa-clock me-1"></i>Mã QR có hiệu lực trong 15 phút
+            </div>
+        </div>
+
+        <!-- Paid state (hidden) -->
+        <div id="paid-overlay">
+            <div class="paid-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2 style="color:#28a745; font-weight:700; margin-bottom:8px;">Thanh Toán Thành Công!</h2>
+            <p style="color:#666; margin-bottom:4px;">Hệ thống đã xác nhận giao dịch của bạn.</p>
+            <p style="color:#999; font-size:0.9em;">Đang chuyển sang trang xác nhận đơn hàng... <span id="countdown">3</span>s</p>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    const orderId = /*[[${orderId}]]*/ '';
+    const total   = /*[[${total}]]*/ 0;
+
+    // Tell backend to start watching MB transactions
+    fetch('/payment/watch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, amount: total })
+    });
+
+    // Connect SSE stream
+    const evtSource = new EventSource('/payment/sse/' + orderId);
+
+    evtSource.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.status === 'paid') {
+            evtSource.close();
+            // Show paid overlay
+            document.getElementById('waiting-section').style.display = 'none';
+            document.getElementById('paid-overlay').style.display = 'block';
+
+            // Create order in DB now that payment is confirmed
+            fetch('/cart/confirm-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin'
+            }).then(function(res) { return res.json(); })
+              .then(function(result) {
+                // Countdown then redirect to success
+                let sec = 3;
+                const cd = document.getElementById('countdown');
+                const t = setInterval(function() {
+                    sec--;
+                    if (cd) cd.textContent = sec;
+                    if (sec <= 0) {
+                        clearInterval(t);
+                        window.location.href = '/cart/success';
+                    }
+                }, 1000);
+            }).catch(function(err) {
+                console.error('Confirm payment error:', err);
+                // Still redirect after delay
+                setTimeout(function() { window.location.href = '/cart/success'; }, 3000);
+            });
+        } else if (data.status === 'timeout') {
+            evtSource.close();
+        }
+    };
+
+    evtSource.onerror = function() { evtSource.close(); };
+</script>
+</body>
+</html>

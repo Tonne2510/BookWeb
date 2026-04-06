@@ -1,0 +1,14 @@
+target/
+*.class
+*.jar
+*.war
+*.ear
+.DS_Store
+.idea/
+.vscode/
+*.iml
+node_modules/
+dist/
+build/
+.env
+*.log

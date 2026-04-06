@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authors Management - BookWeb Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary-color: #0066CC; --primary-light: #1A73E8; --danger-color: #c41e3a; }
+        body { background-color: #f5f7fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%); min-height: 100vh; padding: 25px 0; position: fixed; width: 250px; left: 0; top: 0; color: white; }
+        .sidebar-brand { padding: 20px 25px; border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px; text-align: center; }
+        .sidebar-brand h2 { margin: 0; font-size: 1.8em; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu li a { display: block; padding: 15px 25px; color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.3s ease; border-left: 4px solid transparent; }
+        .sidebar-menu li a:hover { background-color: rgba(255,255,255,0.1); border-left-color: white; color: white; }
+        .sidebar-menu li a.active { background-color: rgba(255,255,255,0.2); border-left-color: white; color: white; }
+        .main-content { margin-left: 250px; padding: 30px; }
+        .top-bar { background: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .top-bar h1 { margin: 0; color: #333; font-size: 1.8em; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%); border: none; }
+        .btn-primary:hover { background: linear-gradient(135deg, #0052a3 0%, #1565d8 100%); color: white; }
+        .table-container { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .table { margin-bottom: 0; }
+        .table thead th { background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: 600; color: #333; }
+        .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600; }
+        .status-active { background-color: #d4edda; color: #155724; }
+        .status-inactive { background-color: #f8d7da; color: #721c24; }
+        .action-btn { padding: 5px 10px; font-size: 0.9em; margin: 0 2px; }
+        .modal-header { background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%); color: white; }
+        .form-control { border: 2px solid #e0e0e0; border-radius: 8px; }
+        .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1); }
+        @media (max-width: 768px) { .sidebar { position: relative; width: 100%; min-height: auto; } .main-content { margin-left: 0; } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-brand"><h2><i class="fas fa-book"></i> BookWeb</h2><p style="font-size: 0.8em; margin: 5px 0 0 0;">Admin Panel</p></div>
+        <ul class="sidebar-menu">
+            <li><a href="/admin/dashboard"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
+            <li><a href="/admin/books"><i class="fas fa-book me-2"></i>Books Management</a></li>
+            <li><a href="/admin/categories"><i class="fas fa-list me-2"></i>Categories</a></li>
+            <li><a href="/admin/authors" class="active"><i class="fas fa-pen-fancy me-2"></i>Authors</a></li>
+            <li><a href="/admin/orders"><i class="fas fa-shopping-cart me-2"></i>Orders</a></li>
+            <li><a href="/admin/reviews"><i class="fas fa-star me-2"></i>Reviews</a></li>
+            <li style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 40px;">
+                <a href="/auth/profile"><i class="fas fa-user-circle me-2"></i>My Profile</a>
+            </li>
+            <li><a href="/auth/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <h1><i class="fas fa-pen-fancy me-2"></i>Authors Management</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAuthorModal"><i class="fas fa-plus me-1"></i>Add Author</button>
+        </div>
+
+        <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i><span th:text="${message}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="table-container">
+            <div th:if="${#lists.isEmpty(authors)}" style="text-align: center; padding: 40px;">
+                <i class="fas fa-inbox" style="font-size: 3em; color: #ccc; margin-bottom: 20px; display: block;"></i>
+                <h5 style="color: #999;">No authors found</h5>
+                <p style="color: #bbb;">Create your first author to get started.</p>
+            </div>
+            <table class="table" th:if="${not #lists.isEmpty(authors)}">
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">ID</th>
+                        <th style="width: 25%;">Author Name</th>
+                        <th style="width: 25%;">Bio</th>
+                        <th style="width: 15%;">Nationality</th>
+                        <th style="width: 10%;">Status</th>
+                        <th style="width: 15%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="author : ${authors}">
+                        <td th:text="${author.id}"></td>
+                        <td><strong th:text="${author.name}"></strong></td>
+                        <td style="color: #666; font-size: 0.9em;" th:text="${#strings.abbreviate(author.bio, 50)}"></td>
+                        <td th:text="${author.nationality}"></td>
+                        <td>
+                            <span th:if="${author.isActive}" class="status-badge status-active">
+                                <i class="fas fa-check-circle me-1"></i>Active
+                            </span>
+                            <span th:unless="${author.isActive}" class="status-badge status-inactive">
+                                <i class="fas fa-times-circle me-1"></i>Inactive
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-warning action-btn" data-bs-toggle="modal" data-bs-target="#editAuthorModal" 
+                                    th:onclick="'editAuthor(' + ${author.id} + ', \'' + ${author.name} + '\', \'' + ${author.bio} + '\', \'' + ${author.nationality} + '\')'">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <form method="post" th:action="@{/admin/authors/delete/{id}(id=${author.id})}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger action-btn" onclick="return confirm('Delete this author?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add Author Modal -->
+    <div class="modal fade" id="addAuthorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Add New Author</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" action="/admin/authors/create">
+                    <div class="modal-body">
+                        <div class="form-group mb-3">
+                            <label for="authorName" class="form-label">Author Name <span style="color: var(--danger-color);">*</span></label>
+                            <input type="text" class="form-control" id="authorName" name="name" required placeholder="Enter author name">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="authorBio" class="form-label">Biography</label>
+                            <textarea class="form-control" id="authorBio" name="bio" rows="3" placeholder="Enter author biography"></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="authorNationality" class="form-label">Nationality</label>
+                            <input type="text" class="form-control" id="authorNationality" name="nationality" placeholder="Enter nationality">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Author</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Author Modal -->
+    <div class="modal fade" id="editAuthorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Author</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" id="editAuthorForm" th:action="@{/admin/authors/update/}">
+                    <div class="modal-body">
+                        <input type="hidden" id="editAuthorId" name="id">
+                        <div class="form-group mb-3">
+                            <label for="editAuthorName" class="form-label">Author Name <span style="color: var(--danger-color);">*</span></label>
+                            <input type="text" class="form-control" id="editAuthorName" name="name" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="editAuthorBio" class="form-label">Biography</label>
+                            <textarea class="form-control" id="editAuthorBio" name="bio" rows="3"></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="editAuthorNationality" class="form-label">Nationality</label>
+                            <input type="text" class="form-control" id="editAuthorNationality" name="nationality">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Author</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function editAuthor(id, name, bio, nationality) {
+            document.getElementById('editAuthorId').value = id;
+            document.getElementById('editAuthorName').value = name;
+            document.getElementById('editAuthorBio').value = bio;
+            document.getElementById('editAuthorNationality').value = nationality;
+            document.getElementById('editAuthorForm').action = '/admin/authors/update/' + id;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Toán - BookWeb</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+        
+        .checkout-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px 15px;
+        }
+        
+        .checkout-header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .checkout-header h1 {
+            font-size: 2em;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+        }
+        
+        .checkout-header p {
+            font-size: 1em;
+            opacity: 0.9;
+            margin: 0;
+        }
+        
+        .checkout-row {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        @media (max-width: 992px) {
+            .checkout-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+        
+        .form-section h3 {
+            margin: 0 0 20px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            color: #333;
+            font-weight: 700;
+            font-size: 1.3em;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { 
+            font-weight: 600; 
+            margin-bottom: 8px; 
+            color: #333;
+            display: block;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .payment-method {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .payment-method:hover {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+        
+        .payment-method input[type="radio"] {
+            margin-right: 10px;
+        }
+        
+        .payment-method.active {
+            border-color: #667eea;
+            background-color: #f0f3ff;
+        }
+        
+        .payment-method label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .order-summary {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            position: sticky;
+            top: 30px;
+        }
+        
+        .order-summary h3 {
+            margin: 0 0 20px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            color: #333;
+            font-weight: 700;
+        }
+        
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .item-qty {
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        .item-price {
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .order-total {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #667eea;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .total-row.grand-total {
+            font-weight: 700;
+            font-size: 1.3em;
+            color: #667eea;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
+            color: white;
+        }
+        
+        .required { color: #dc3545; }
+        
+        .alert {
+            border-radius: 10px;
+            border: none;
+            margin-bottom: 20px;
+        }
+        
+        .breadcrumb-custom {
+            background: transparent;
+            padding: 0 0 15px 0;
+            margin-bottom: 0;
+        }
+        
+        .breadcrumb-item {
+            color: #666;
+        }
+        
+        .breadcrumb-item.active {
+            color: #0066CC;
+            font-weight: 600;
+        }
+        
+        .breadcrumb-item a {
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #0066CC;
+            text-decoration: underline;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9em;
+        }
+        
+        .feature-item i {
+            font-size: 1.1em;
+            margin-right: 8px;
+            color: #ffd700;
+        }
+    </style>
+</head>
+<body>
+    <div class="checkout-container">
+        <!-- Header -->
+        <div class="checkout-header">
+            <h1><i class="fas fa-shopping-cart me-2"></i>Thanh Toán Đơn Hàng</h1>
+            <p>Hoàn tất đơn hàng của bạn dễ dàng và an toàn</p>
+            <div class="feature-list">
+                <div class="feature-item"><i class="fas fa-lock"></i>Thanh toán an toàn</div>
+                <div class="feature-item"><i class="fas fa-truck"></i>Giao hàng nhanh</div>
+                <div class="feature-item"><i class="fas fa-undo"></i>Hoàn hàng miễn phí</div>
+                <div class="feature-item"><i class="fas fa-headset"></i>Hỗ trợ 24/7</div>
+            </div>
+        </div>
+        
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="breadcrumb-custom">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/"><i class="fas fa-home me-1"></i>Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="/cart"><i class="fas fa-shopping-cart me-1"></i>Giỏ hàng</a></li>
+                <li class="breadcrumb-item active"><i class="fas fa-credit-card me-1"></i>Thanh toán</li>
+            </ol>
+        </nav>
+        
+        <!-- Main Content -->
+        <div class="checkout-row">
+            <!-- Form Section -->
+            <div>
+                <!-- Error/Success Messages -->
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                    <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                
+                <!-- Checkout Form -->
+                <form method="POST" action="/cart/checkout" id="checkoutForm" class="needs-validation">
+                    <!-- Customer Information -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-user me-2"></i>Thông Tin Khách Hàng</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Họ Tên <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="fullName" required 
+                                       placeholder="Nhập họ tên đầy đủ"
+                                       th:value="${user != null ? user.firstName + ' ' + user.lastName : ''}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email <span class="required">*</span></label>
+                                <input type="email" class="form-control" name="email" required 
+                                       placeholder="example@email.com"
+                                       th:value="${user != null ? user.email : ''}">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Số Điện Thoại <span class="required">*</span></label>
+                            <input type="tel" class="form-control" name="phone" required 
+                                   placeholder="0123456789"
+                                   th:value="${user != null ? user.phone : ''}">
+                        </div>
+                    </div>
+                    
+                    <!-- Shipping Address -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-map-marker-alt me-2"></i>Địa Chỉ Giao Hàng</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Tỉnh/Thành Phố <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="city" required 
+                                       placeholder="TP. Hồ Chí Minh">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Quận/Huyện <span class="required">*</span></label>
+                                <input type="text" class="form-control" name="district" required 
+                                       placeholder="Quận 1">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Địa Chỉ Chi Tiết <span class="required">*</span></label>
+                            <textarea class="form-control" name="shippingAddress" rows="3" required
+                                      placeholder="Số nhà, đường phố, tòa nhà, v.v."></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Method -->
+                    <div class="form-section">
+                        <h3><i class="fas fa-wallet me-2"></i>Phương Thức Thanh Toán</h3>
+                        
+                        <div class="payment-method active" onclick="selectPayment(this, 'cash_on_delivery')">
+                            <input type="radio" name="paymentMethod" value="cash_on_delivery" id="paymentCOD" 
+                                   required checked>
+                            <label for="paymentCOD" class="ms-2">
+                                <i class="fas fa-money-bill me-1"></i>Thanh Toán Khi Nhận (COD)
+                                <br><small class="fw-normal text-muted">Thanh toán trực tiếp cho nhân viên giao hàng</small>
+                            </label>
+                        </div>
+                        
+                        <div class="payment-method" onclick="selectPayment(this, 'vietqr')">
+                            <input type="radio" name="paymentMethod" value="vietqr" id="paymentVietQR">
+                            <label for="paymentVietQR" class="ms-2">
+                                <i class="fas fa-qrcode me-1" style="color:#00a651;"></i>Chuyển Khoản VietQR
+                                <br><small class="fw-normal text-muted">Quét mã QR bằng app ngân hàng &mdash; tự động điền số tiền</small>
+                            </label>
+                        </div>
+
+                        <!-- VietQR Bank Preview -->
+                        <div id="vietqr-preview" style="display:none; margin-top:12px; background:#f9f0ff; border:1.5px solid #7b2d8b; border-radius:10px; padding:14px 18px;">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                                <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/02/Logo-MB-Bank.png" height="28" alt="MB" style="border-radius:4px;">
+                                <strong style="color:#7b2d8b;">MB Bank</strong>
+                            </div>
+                            <div style="font-size:0.95em; color:#333;">
+                                <div><span style="color:#666;">Số tài khoản:</span> <strong>0989402500</strong></div>
+                                <div><span style="color:#666;">Chủ tài khoản:</span> <strong>NGO PHU LAM</strong></div>
+                                <div style="margin-top:6px; color:#7b2d8b; font-size:0.88em;"><i class="fas fa-info-circle me-1"></i>Mã QR sẽ hiển thị tự động sau khi xác nhận đơn hàng</div>
+                            </div>
+                        </div>
+
+                        <div class="payment-method" onclick="selectPayment(this, 'credit_card')">
+                            <input type="radio" name="paymentMethod" value="credit_card" id="paymentWallet">
+                            <label for="paymentWallet" class="ms-2">
+                                <i class="fas fa-credit-card me-1"></i>Thẻ Tín Dụng
+                                <br><small class="fw-normal text-muted">Thanh toán bằng thẻ tín dụng (sẽ cập nhật sớm)</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check me-2"></i>Xác Nhận Đơn Hàng
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Order Summary Sidebar -->
+            <div class="order-summary" th:if="${cart != null && cart.items != null}">
+                <h3><i class="fas fa-list me-2"></i>Đơn Hàng Của Bạn</h3>
+                
+                <div th:if="${cart.items.size() > 0}">
+                    <div th:each="item : ${cart.items}" class="order-item">
+                        <div>
+                            <div class="item-name" th:text="${item.title}">Book Title</div>
+                            <div class="item-qty">SL: <span th:text="${item.quantity}">1</span></div>
+                        </div>
+                        <div class="item-price" th:text="'₫' + ${#numbers.formatInteger(item.quantity * item.price, 0)}">₫0</div>
+                    </div>
+                    
+                    <div class="order-total">
+                        <div class="total-row">
+                            <span>Tạm Tính:</span>
+                            <span th:text="'₫' + ${#numbers.formatInteger(cart.total, 0)}">₫0</span>
+                        </div>
+                        <div class="total-row">
+                            <span><i class="fas fa-truck me-1"></i>Vận Chuyển:</span>
+                            <span style="color: #28a745;">Miễn Phí</span>
+                        </div>
+                        <div class="total-row grand-total">
+                            <span>Tổng Cộng:</span>
+                            <span th:text="'₫' + ${#numbers.formatInteger(cart.total, 0)}">₫0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div th:unless="${cart.items != null && cart.items.size() > 0}" style="text-align: center; color: #999; padding: 30px 0;">
+                    <i class="fas fa-inbox" style="font-size: 2em; display: block; margin-bottom: 10px;"></i>
+                    <p>Giỏ hàng của bạn trống</p>
+                    <a href="/books" class="btn btn-sm btn-primary" style="margin-top: 0; padding: 8px 15px;">
+                        <i class="fas fa-shopping-bag me-1"></i>Tiếp Tục Mua Sắm
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function selectPayment(element, method) {
+            // Remove active class from all
+            document.querySelectorAll('.payment-method').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Add active class to clicked
+            element.classList.add('active');
+            // Check the radio button
+            element.querySelector('input[type="radio"]').checked = true;
+            // Toggle VietQR preview
+            const preview = document.getElementById('vietqr-preview');
+            if (preview) preview.style.display = (method === 'vietqr') ? 'block' : 'none';
+        }
+        
+        // Form validation
+        const form = document.getElementById('checkoutForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+        }
+    </script>
+</body>
+</html>
