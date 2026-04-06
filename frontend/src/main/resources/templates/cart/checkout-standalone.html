@@ -313,13 +313,6 @@
             class="needs-validation"
             novalidate
           >
-            <input
-              type="hidden"
-              name="voucherCode"
-              id="voucherCodeInput"
-              value=""
-            />
-
             <div class="form-section">
               <h3><i class="fas fa-user me-2"></i>Thông Tin Khách Hàng</h3>
               <div class="form-row">
@@ -562,36 +555,6 @@
             </div>
 
             <div class="order-total">
-              <div class="total-row" style="margin-bottom: 14px">
-                <span style="min-width: 90px">Voucher:</span>
-                <div style="display: flex; gap: 8px; width: 72%">
-                  <input
-                    type="text"
-                    id="voucherCodeField"
-                    class="form-control"
-                    placeholder="Nhập mã giảm giá"
-                    style="padding: 8px 10px; font-size: 0.92em"
-                  />
-                  <button
-                    type="button"
-                    id="applyVoucherBtn"
-                    class="btn btn-sm"
-                    style="
-                      margin-top: 0;
-                      width: auto;
-                      padding: 8px 12px;
-                      background: #0d6efd;
-                      color: #fff;
-                    "
-                  >
-                    Áp dụng
-                  </button>
-                </div>
-              </div>
-              <div
-                id="voucherMessage"
-                style="font-size: 0.85em; margin-bottom: 10px; color: #666"
-              ></div>
               <div class="total-row">
                 <span>Tạm Tính:</span>
                 <span
@@ -600,14 +563,6 @@
                   th:text="'₫' + ${#numbers.formatInteger(cart.total, 0)}"
                   >₫0</span
                 >
-              </div>
-              <div
-                class="total-row"
-                id="voucherDiscountRow"
-                style="display: none; color: #198754"
-              >
-                <span>Giảm Voucher:</span>
-                <span id="voucherDiscountValue">-₫0</span>
               </div>
               <div class="total-row">
                 <span><i class="fas fa-truck me-1"></i>Vận Chuyển:</span>
@@ -677,68 +632,7 @@
         });
       }
 
-      // Format tiền và Voucher (Giữ nguyên của bạn)
-      function formatVnd(n) {
-        return "₫" + Math.round(Number(n || 0)).toLocaleString("vi-VN");
-      }
-      const applyBtn = document.getElementById("applyVoucherBtn");
-      if (applyBtn) {
-        applyBtn.addEventListener("click", function () {
-          const codeField = document.getElementById("voucherCodeField");
-          const code = (codeField.value || "").trim();
-          const subtotalEl = document.getElementById("subtotalValue");
-          const subtotal = Number(subtotalEl ? subtotalEl.dataset.subtotal : 0);
-          const msgEl = document.getElementById("voucherMessage");
-          const discountRow = document.getElementById("voucherDiscountRow");
-          const discountVal = document.getElementById("voucherDiscountValue");
-          const grandVal = document.getElementById("grandTotalValue");
-          const voucherInput = document.getElementById("voucherCodeInput");
-
-          if (!code) {
-            msgEl.style.color = "#dc3545";
-            msgEl.textContent = "Vui lòng nhập mã voucher";
-            return;
-          }
-
-          const body =
-            "code=" +
-            encodeURIComponent(code) +
-            "&subtotal=" +
-            encodeURIComponent(subtotal);
-          fetch("/cart/validate-voucher", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body,
-          })
-            .then(function (r) {
-              return r.json();
-            })
-            .then(function (data) {
-              if (data.valid) {
-                voucherInput.value = code.toUpperCase();
-                msgEl.style.color = "#198754";
-                msgEl.textContent = data.message;
-                discountRow.style.display = "";
-                discountVal.textContent = "-" + formatVnd(data.discountAmount);
-                // Cập nhật lại số tiền thật cho MoMo
-                grandVal.textContent = formatVnd(data.finalAmount);
-                grandVal.setAttribute("data-amount", data.finalAmount);
-              } else {
-                voucherInput.value = "";
-                msgEl.style.color = "#dc3545";
-                msgEl.textContent = data.message || "Voucher không hợp lệ";
-                discountRow.style.display = "none";
-                grandVal.textContent = formatVnd(subtotal);
-                grandVal.setAttribute("data-amount", subtotal);
-              }
-            })
-            .catch(function () {
-              voucherInput.value = "";
-              msgEl.style.color = "#dc3545";
-              msgEl.textContent = "Không thể kiểm tra voucher lúc này";
-            });
-        });
-      }
+      // Voucher input has been removed from checkout page.
     </script>
   </body>
 </html>

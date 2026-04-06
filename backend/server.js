@@ -86,6 +86,23 @@ const ensureOrderVoucherColumns = async () => {
       throw error;
     }
   }
+
+  try {
+    await db.query(
+      "ALTER TABLE `Orders` ADD COLUMN `reviewed` TINYINT(1) NOT NULL DEFAULT 0",
+    );
+    console.log("✅ Added Orders.reviewed column");
+  } catch (error) {
+    if (
+      !(
+        error &&
+        (error.original?.code === "ER_DUP_FIELDNAME" ||
+          error.parent?.code === "ER_DUP_FIELDNAME")
+      )
+    ) {
+      throw error;
+    }
+  }
 };
 
 const ensureVoucherGiftColumns = async () => {
