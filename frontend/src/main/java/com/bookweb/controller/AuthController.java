@@ -363,6 +363,19 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/orders/{id}/cancel")
+    public String cancelOrder(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        try {
+            String token = TokenUtil.getTokenFromRequest();
+            if (token == null) return "redirect:/auth/login";
+            orderService.cancelOrder(id, token);
+            redirectAttributes.addFlashAttribute("message", "Đã hủy đơn hàng thành công.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi hủy đơn: " + e.getMessage());
+        }
+        return "redirect:/auth/orders";
+    }
+
     @PostMapping("/orders/{id}/confirm")
     public String confirmOrder(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
