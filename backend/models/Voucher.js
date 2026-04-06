@@ -12,6 +12,10 @@ const Voucher = sequelize.define('Voucher', {
     allowNull: false,
     unique: true
   },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
   name: {
     type: DataTypes.STRING,
     allowNull: false
@@ -24,6 +28,11 @@ const Voucher = sequelize.define('Voucher', {
     type: DataTypes.ENUM('percent', 'fixed'),
     allowNull: false,
     defaultValue: 'percent'
+  },
+  distributionType: {
+    type: DataTypes.ENUM('code', 'gift'),
+    allowNull: false,
+    defaultValue: 'code'
   },
   value: {
     type: DataTypes.DECIMAL(10, 2),
@@ -47,6 +56,11 @@ const Voucher = sequelize.define('Voucher', {
     allowNull: false,
     defaultValue: 0
   },
+  giftedCount: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
   perUserLimit: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -64,6 +78,39 @@ const Voucher = sequelize.define('Voucher', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  giftSource: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  giftConditionType: {
+    type: DataTypes.ENUM('amount', 'review'),
+    allowNull: true
+  },
+  minGiftAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  maxGiftAmount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  minGiftReviewCount: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  maxGiftReviewCount: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  giftedBySystem: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  sourceTemplateId: {
+    type: DataTypes.UUID,
+    allowNull: true
   }
 });
 

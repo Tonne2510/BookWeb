@@ -31,12 +31,23 @@ public class VoucherService {
                 voucher {
                   id
                   code
+                  userId
                   name
+                  description
                   type
+                  distributionType
                   value
                   minOrderValue
                   maxDiscount
                   isActive
+                  endDate
+                  giftSource
+                  giftConditionType
+                  minGiftAmount
+                  maxGiftAmount
+                  minGiftReviewCount
+                  maxGiftReviewCount
+                  giftedBySystem
                 }
               }
             }
@@ -47,12 +58,7 @@ public class VoucherService {
         variables.addProperty("subtotal", subtotal);
 
         JsonObject response = graphQLService.executeQuery(query, variables, token);
-        if (response.has("errors") && !response.get("errors").isJsonNull()) {
-            var errors = response.getAsJsonArray("errors");
-            if (errors.size() > 0) {
-                throw new Exception(errors.get(0).getAsJsonObject().get("message").getAsString());
-            }
-        }
+        throwIfGraphQLErrors(response);
 
         JsonObject data = response.getAsJsonObject("data").getAsJsonObject("validateVoucher");
         Map<String, Object> result = new HashMap<>();
@@ -72,18 +78,29 @@ public class VoucherService {
               vouchers(page: $page, limit: $limit) {
                 id
                 code
+                userId
                 name
                 description
                 type
+                distributionType
                 value
                 minOrderValue
                 maxDiscount
                 totalUsageLimit
                 usedCount
+                giftedCount
                 perUserLimit
                 startDate
                 endDate
                 isActive
+                giftSource
+                giftConditionType
+                minGiftAmount
+                maxGiftAmount
+                minGiftReviewCount
+                maxGiftReviewCount
+                giftedBySystem
+                sourceTemplateId
               }
             }
         """;
@@ -93,14 +110,135 @@ public class VoucherService {
         variables.addProperty("limit", limit);
 
         JsonObject response = graphQLService.executeQuery(query, variables, token);
-        if (response.has("errors") && !response.get("errors").isJsonNull()) {
-            var errors = response.getAsJsonArray("errors");
-            if (errors.size() > 0) {
-                throw new Exception(errors.get(0).getAsJsonObject().get("message").getAsString());
-            }
-        }
+        throwIfGraphQLErrors(response);
 
         JsonArray vouchers = response.getAsJsonObject("data").getAsJsonArray("vouchers");
+        List<VoucherDTO> result = new ArrayList<>();
+        vouchers.forEach(v -> result.add(gson.fromJson(v, VoucherDTO.class)));
+        return result;
+    }
+
+    public List<VoucherDTO> getMyGiftVouchers(Double subtotal, String token) throws Exception {
+        String query = """
+            query MyGiftVouchers($subtotal: Float) {
+              myGiftVouchers(subtotal: $subtotal) {
+                id
+                code
+                userId
+                name
+                description
+                type
+                distributionType
+                value
+                minOrderValue
+                maxDiscount
+                totalUsageLimit
+                usedCount
+                giftedCount
+                perUserLimit
+                startDate
+                endDate
+                isActive
+                giftSource
+                giftConditionType
+                minGiftAmount
+                maxGiftAmount
+                minGiftReviewCount
+                maxGiftReviewCount
+                giftedBySystem
+                sourceTemplateId
+              }
+            }
+        """;
+
+        JsonObject variables = new JsonObject();
+        if (subtotal != null) variables.addProperty("subtotal", subtotal);
+
+        JsonObject response = graphQLService.executeQuery(query, variables, token);
+        throwIfGraphQLErrors(response);
+
+        JsonArray vouchers = response.getAsJsonObject("data").getAsJsonArray("myGiftVouchers");
+        List<VoucherDTO> result = new ArrayList<>();
+        vouchers.forEach(v -> result.add(gson.fromJson(v, VoucherDTO.class)));
+        return result;
+    }
+
+    public List<VoucherDTO> getMyVouchers(Double subtotal, String token) throws Exception {
+        String query = """
+            query MyVouchers($subtotal: Float) {
+              myVouchers(subtotal: $subtotal) {
+                id
+                code
+                userId
+                name
+                description
+                type
+                distributionType
+                value
+                minOrderValue
+                maxDiscount
+                totalUsageLimit
+                usedCount
+                giftedCount
+                perUserLimit
+                startDate
+                endDate
+                isActive
+                giftSource
+                giftConditionType
+                minGiftAmount
+                maxGiftAmount
+                minGiftReviewCount
+                maxGiftReviewCount
+                giftedBySystem
+                sourceTemplateId
+              }
+            }
+        """;
+
+        JsonObject variables = new JsonObject();
+        if (subtotal != null) variables.addProperty("subtotal", subtotal);
+
+        JsonObject response = graphQLService.executeQuery(query, variables, token);
+        throwIfGraphQLErrors(response);
+
+        JsonArray vouchers = response.getAsJsonObject("data").getAsJsonArray("myVouchers");
+        List<VoucherDTO> result = new ArrayList<>();
+        vouchers.forEach(v -> result.add(gson.fromJson(v, VoucherDTO.class)));
+        return result;
+    }
+
+    public List<VoucherDTO> getPublicCodeVouchers(Double subtotal, String token) throws Exception {
+        String query = """
+            query PublicCodeVouchers($subtotal: Float) {
+              publicCodeVouchers(subtotal: $subtotal) {
+                id
+                code
+                name
+                description
+                type
+                distributionType
+                value
+                minOrderValue
+                maxDiscount
+                totalUsageLimit
+                usedCount
+                giftedCount
+                perUserLimit
+                startDate
+                endDate
+                isActive
+              }
+            }
+        """;
+
+        JsonObject variables = new JsonObject();
+        if (subtotal != null) variables.addProperty("subtotal", subtotal);
+
+        JsonObject response = graphQLService.executeQuery(query, variables, token);
+        throwIfGraphQLErrors(response);
+
+        JsonArray vouchers = response.getAsJsonObject("data").getAsJsonArray("publicCodeVouchers");
         List<VoucherDTO> result = new ArrayList<>();
         vouchers.forEach(v -> result.add(gson.fromJson(v, VoucherDTO.class)));
         return result;
@@ -113,11 +251,17 @@ public class VoucherService {
               $name: String!,
               $description: String,
               $type: VoucherType!,
+              $distributionType: VoucherDistributionType,
               $value: Float!,
               $minOrderValue: Float,
               $maxDiscount: Float,
               $totalUsageLimit: Int,
               $perUserLimit: Int,
+              $giftConditionType: GiftConditionType,
+              $minGiftAmount: Float,
+              $maxGiftAmount: Float,
+              $minGiftReviewCount: Int,
+              $maxGiftReviewCount: Int,
               $startDate: String!,
               $endDate: String!,
               $isActive: Boolean
@@ -127,11 +271,17 @@ public class VoucherService {
                 name: $name,
                 description: $description,
                 type: $type,
+                distributionType: $distributionType,
                 value: $value,
                 minOrderValue: $minOrderValue,
                 maxDiscount: $maxDiscount,
                 totalUsageLimit: $totalUsageLimit,
                 perUserLimit: $perUserLimit,
+                giftConditionType: $giftConditionType,
+                minGiftAmount: $minGiftAmount,
+                maxGiftAmount: $maxGiftAmount,
+                minGiftReviewCount: $minGiftReviewCount,
+                maxGiftReviewCount: $maxGiftReviewCount,
                 startDate: $startDate,
                 endDate: $endDate,
                 isActive: $isActive
@@ -146,22 +296,23 @@ public class VoucherService {
         variables.addProperty("name", (String) payload.get("name"));
         if (payload.get("description") != null) variables.addProperty("description", (String) payload.get("description"));
         variables.addProperty("type", (String) payload.get("type"));
+        if (payload.get("distributionType") != null) variables.addProperty("distributionType", (String) payload.get("distributionType"));
         variables.addProperty("value", (Double) payload.get("value"));
         if (payload.get("minOrderValue") != null) variables.addProperty("minOrderValue", (Double) payload.get("minOrderValue"));
         if (payload.get("maxDiscount") != null) variables.addProperty("maxDiscount", (Double) payload.get("maxDiscount"));
         if (payload.get("totalUsageLimit") != null) variables.addProperty("totalUsageLimit", (Integer) payload.get("totalUsageLimit"));
         if (payload.get("perUserLimit") != null) variables.addProperty("perUserLimit", (Integer) payload.get("perUserLimit"));
+        if (payload.get("giftConditionType") != null) variables.addProperty("giftConditionType", (String) payload.get("giftConditionType"));
+        if (payload.get("minGiftAmount") != null) variables.addProperty("minGiftAmount", (Double) payload.get("minGiftAmount"));
+        if (payload.get("maxGiftAmount") != null) variables.addProperty("maxGiftAmount", (Double) payload.get("maxGiftAmount"));
+        if (payload.get("minGiftReviewCount") != null) variables.addProperty("minGiftReviewCount", (Integer) payload.get("minGiftReviewCount"));
+        if (payload.get("maxGiftReviewCount") != null) variables.addProperty("maxGiftReviewCount", (Integer) payload.get("maxGiftReviewCount"));
         variables.addProperty("startDate", (String) payload.get("startDate"));
         variables.addProperty("endDate", (String) payload.get("endDate"));
         variables.addProperty("isActive", true);
 
         JsonObject response = graphQLService.executeQuery(mutation, variables, token);
-        if (response.has("errors") && !response.get("errors").isJsonNull()) {
-            var errors = response.getAsJsonArray("errors");
-            if (errors.size() > 0) {
-                throw new Exception(errors.get(0).getAsJsonObject().get("message").getAsString());
-            }
-        }
+        throwIfGraphQLErrors(response);
     }
 
     public void toggleVoucherStatus(String id, String token) throws Exception {
@@ -175,12 +326,7 @@ public class VoucherService {
         JsonObject variables = new JsonObject();
         variables.addProperty("id", id);
         JsonObject response = graphQLService.executeQuery(mutation, variables, token);
-        if (response.has("errors") && !response.get("errors").isJsonNull()) {
-            var errors = response.getAsJsonArray("errors");
-            if (errors.size() > 0) {
-                throw new Exception(errors.get(0).getAsJsonObject().get("message").getAsString());
-            }
-        }
+        throwIfGraphQLErrors(response);
     }
 
     public void deleteVoucher(String id, String token) throws Exception {
@@ -192,6 +338,10 @@ public class VoucherService {
         JsonObject variables = new JsonObject();
         variables.addProperty("id", id);
         JsonObject response = graphQLService.executeQuery(mutation, variables, token);
+        throwIfGraphQLErrors(response);
+    }
+
+    private void throwIfGraphQLErrors(JsonObject response) throws Exception {
         if (response.has("errors") && !response.get("errors").isJsonNull()) {
             var errors = response.getAsJsonArray("errors");
             if (errors.size() > 0) {

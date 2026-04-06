@@ -74,6 +74,67 @@
                                 <span>Tổng Tiền:</span>
                                 <h4 style="color: #0066CC;" th:text="'₫' + ${#numbers.formatInteger(cartTotal, 0)}"></h4>
                             </div>
+                            <div class="mb-3 p-3" style="border:1px solid #e9ecef; border-radius:10px;">
+                                <label class="form-label mb-2" style="font-weight:600;">Voucher tặng riêng cho bạn</label>
+                                <select id="giftVoucherSelect" class="form-select mb-2">
+                                    <option value="">-- Chọn voucher tặng --</option>
+                                    <option th:each="v : ${giftVouchers}"
+                                            th:value="${v.code}"
+                                            th:text="${v.code + ' - ' + v.name}">
+                                    </option>
+                                </select>
+
+                                <label class="form-label mb-2" style="font-weight:600;">Voucher mã công khai</label>
+                                <select id="publicVoucherSelect" class="form-select mb-2">
+                                    <option value="">-- Chọn voucher mã --</option>
+                                    <option th:each="v : ${publicCodeVouchers}"
+                                            th:value="${v.code}"
+                                            th:text="${v.code + ' - ' + v.name}">
+                                    </option>
+                                </select>
+
+                                <div class="input-group mb-2">
+                                    <input type="text" id="voucherCodeField" class="form-control" placeholder="Nhập mã voucher"
+                                           th:value="${appliedVoucherCode != null ? appliedVoucherCode : ''}">
+                                    <button type="button" id="applyVoucherBtn" class="btn btn-outline-primary">Áp dụng</button>
+                                    <button type="button" id="removeVoucherBtn" class="btn btn-outline-danger">Bỏ mã</button>
+                                </div>
+                                <div id="voucherMessage" class="small"
+                                     th:style="${appliedVoucherValidation != null ? 'color:#198754;' : 'color:#6c757d;'}"
+                                     th:text="${appliedVoucherValidation != null ? appliedVoucherValidation.message : 'Voucher được áp dụng ngay tại giỏ hàng trước khi thanh toán.'}">
+                                </div>
+                            </div>
+
+                            <div class="mb-3" id="voucherDetailBox"
+                                 th:if="${appliedVoucherValidation != null && appliedVoucherValidation.voucher != null}"
+                                 style="border:1px solid #dfe6ff; border-radius:10px; padding:12px; background:#f8faff;">
+                                <div class="small" style="font-weight:700; margin-bottom:8px;">Thông tin voucher đang áp dụng</div>
+                                <div class="small"><strong>Mã:</strong> <span th:text="${appliedVoucherValidation.voucher.code}"></span></div>
+                                <div class="small"><strong>Tên:</strong> <span th:text="${appliedVoucherValidation.voucher.name}"></span></div>
+                                <div class="small"><strong>Mô tả:</strong> <span th:text="${appliedVoucherValidation.voucher.description}"></span></div>
+                                <div class="small"><strong>Giá trị:</strong>
+                                    <span th:text="${appliedVoucherValidation.voucher.type == 'percent' ? (#numbers.formatDecimal(appliedVoucherValidation.voucher.value,1,0) + '%') : ('₫' + #numbers.formatInteger(appliedVoucherValidation.voucher.value, 0))}"></span>
+                                </div>
+                                <div class="small"><strong>Đơn tối thiểu:</strong>
+                                    <span th:text="'₫' + ${#numbers.formatInteger(appliedVoucherValidation.voucher.minOrderValue ?: 0, 0)}"></span>
+                                </div>
+                                <div class="small"><strong>HSD:</strong>
+                                    <span th:text="${appliedVoucherValidation.voucher.endDate != null ? #strings.substring(appliedVoucherValidation.voucher.endDate,0,10) : 'Không giới hạn'}"></span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-2" id="voucherDiscountRow"
+                                 th:if="${appliedVoucherValidation != null}">
+                                <span>Giảm Voucher:</span>
+                                <strong style="color:#198754;"
+                                        th:text="'-₫' + ${#numbers.formatInteger(appliedVoucherValidation.discountAmount, 0)}"></strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Tổng sau giảm:</span>
+                                <h5 style="color: #0d6efd;"
+                                    id="cartFinalTotalText"
+                                    th:text="'₫' + ${#numbers.formatInteger(cartFinalTotal, 0)}"></h5>
+                            </div>
                             <hr/>
                             <a href="/cart/checkout" class="btn btn-primary w-100 mb-2">
                                 <i class="fas fa-credit-card me-2"></i>Thực Hiện Thanh Toán
@@ -134,6 +195,82 @@
                         }
                     });
             }
+        }
+
+        function formatVnd(n) {
+            return '₫' + Math.round(Number(n || 0)).toLocaleString('vi-VN');
+        }
+
+        const giftSelect = document.getElementById('giftVoucherSelect');
+        const publicSelect = document.getElementById('publicVoucherSelect');
+        const codeField = document.getElementById('voucherCodeField');
+        const applyBtn = document.getElementById('applyVoucherBtn');
+        const removeBtn = document.getElementById('removeVoucherBtn');
+        const voucherMessage = document.getElementById('voucherMessage');
+        const finalTotalText = document.getElementById('cartFinalTotalText');
+
+        if (giftSelect && codeField) {
+            giftSelect.addEventListener('change', function() {
+                if (this.value) {
+                    codeField.value = this.value;
+                    if (publicSelect) publicSelect.value = '';
+                }
+            });
+        }
+
+        if (publicSelect && codeField) {
+            publicSelect.addEventListener('change', function() {
+                if (this.value) {
+                    codeField.value = this.value;
+                    if (giftSelect) giftSelect.value = '';
+                }
+            });
+        }
+
+        if (applyBtn && codeField) {
+            applyBtn.addEventListener('click', function() {
+                const code = (codeField.value || '').trim();
+                if (!code) {
+                    voucherMessage.style.color = '#dc3545';
+                    voucherMessage.textContent = 'Vui lòng nhập hoặc chọn mã voucher';
+                    return;
+                }
+
+                fetch('/cart/apply-voucher', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'code=' + encodeURIComponent(code)
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.valid) {
+                        voucherMessage.style.color = '#198754';
+                        voucherMessage.textContent = data.message || 'Áp dụng voucher thành công';
+                        if (finalTotalText) {
+                            finalTotalText.textContent = formatVnd(data.finalAmount);
+                        }
+                        window.location.reload();
+                    } else {
+                        voucherMessage.style.color = '#dc3545';
+                        voucherMessage.textContent = data.message || 'Voucher không hợp lệ';
+                    }
+                })
+                .catch(function() {
+                    voucherMessage.style.color = '#dc3545';
+                    voucherMessage.textContent = 'Không thể áp dụng voucher lúc này';
+                });
+            });
+        }
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                fetch('/cart/remove-voucher', {
+                    method: 'POST'
+                })
+                .then(function() {
+                    window.location.reload();
+                });
+            });
         }
     </script>
     </div>
