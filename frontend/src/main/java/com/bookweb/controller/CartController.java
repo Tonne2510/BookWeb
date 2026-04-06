@@ -295,7 +295,8 @@ public class CartController {
             orderData.put("email", email);
             orderData.put("phone", phone);
             orderData.put("shippingAddress", fullShippingAddress);
-            orderData.put("paymentMethod", paymentMethod);
+            String normalizedPaymentMethod = "momo".equals(paymentMethod) ? "bank_transfer" : paymentMethod;
+            orderData.put("paymentMethod", normalizedPaymentMethod);
             orderData.put("items", items);
 
             double subtotal = ((Number) cart.get("total")).doubleValue();
@@ -311,6 +312,29 @@ public class CartController {
                 }
             }
             orderData.put("total", finalTotal);
+
+            if ("momo".equals(paymentMethod)) {
+                // MoMo: create pending order first, real order is created after callback success.
+                String tempOrderId = java.util.UUID.randomUUID().toString();
+                Map<String, Object> pendingOrder = new HashMap<>(orderData);
+                pendingOrder.put("orderId", tempOrderId);
+                pendingOrder.put("token", token);
+                session.setAttribute("pendingMomoOrder", pendingOrder);
+
+                Map<String, Object> lastOrder = new HashMap<>();
+                lastOrder.put("orderId", tempOrderId);
+                lastOrder.put("fullName", fullName);
+                lastOrder.put("email", email);
+                lastOrder.put("phone", phone);
+                lastOrder.put("shippingAddress", fullShippingAddress);
+                lastOrder.put("paymentMethod", paymentMethod);
+                lastOrder.put("total", finalTotal);
+                lastOrder.put("voucherDiscount", voucherDiscount);
+                lastOrder.put("voucherCode", session.getAttribute(APPLIED_VOUCHER_CODE_SESSION_KEY));
+                session.setAttribute("lastOrder", lastOrder);
+
+                return "redirect:/cart/momo-payment";
+            }
 
             if ("vietqr".equals(paymentMethod)) {
                 // VietQR: DON'T create order yet — store data in session, create after payment confirmed
@@ -360,6 +384,48 @@ public class CartController {
     }
 
     /**
+     * Intermediate page to start MoMo payment from pending session order.
+     */
+    @GetMapping("/momo-payment")
+    public String momoPaymentPage(HttpSession session, Model model) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> pending = (Map<String, Object>) session.getAttribute("pendingMomoOrder");
+        if (pending == null) {
+            return "redirect:/cart/checkout";
+        }
+
+        model.addAttribute("orderId", pending.get("orderId"));
+        model.addAttribute("amount", pending.get("total"));
+        return "cart/momo-payment-standalone";
+    }
+
+    /**
+     * MoMo callback endpoint. resultCode=0 means payment success.
+     */
+    @GetMapping("/momo-return")
+    public String momoReturn(
+            @RequestParam(required = false) String resultCode,
+            @RequestParam(required = false) String message,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+        try {
+            if (!"0".equals(resultCode)) {
+                String userMessage = (message != null && !message.isBlank())
+                        ? message
+                        : "Thanh toán MoMo chưa thành công.";
+                redirectAttributes.addFlashAttribute("error", userMessage);
+                return "redirect:/cart/checkout";
+            }
+
+            String realOrderId = finalizePendingOrder(session, "pendingMomoOrder");
+            return "redirect:/cart/success";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Không thể xác nhận thanh toán MoMo: " + e.getMessage());
+            return "redirect:/cart/checkout";
+        }
+    }
+
+    /**
      * VietQR payment waiting page
      */
     @GetMapping("/payment")
@@ -377,31 +443,7 @@ public class CartController {
     @ResponseBody
     public ResponseEntity<?> confirmPayment(HttpSession session) {
         try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> pending = (Map<String, Object>) session.getAttribute("pendingVietqrOrder");
-            if (pending == null) {
-                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "No pending order"));
-            }
-
-            String token = (String) pending.get("token");
-            Map<String, Object> orderData = new HashMap<>(pending);
-            orderData.remove("orderId");
-            orderData.remove("token");
-
-            String realOrderId = orderService.createOrder(orderData, token);
-
-            // Update lastOrder with real orderId
-            @SuppressWarnings("unchecked")
-            Map<String, Object> lastOrder = (Map<String, Object>) session.getAttribute("lastOrder");
-            if (lastOrder != null) {
-                lastOrder.put("orderId", realOrderId);
-                session.setAttribute("lastOrder", lastOrder);
-            }
-
-            // Clear pending order and cart
-            session.removeAttribute("pendingVietqrOrder");
-            cartService.clearCart(session);
-            clearAppliedVoucherSession(session);
+            String realOrderId = finalizePendingOrder(session, "pendingVietqrOrder");
 
             return ResponseEntity.ok(Map.of("success", true, "orderId", realOrderId));
         } catch (Exception e) {
@@ -460,5 +502,32 @@ public class CartController {
             clearAppliedVoucherSession(session);
             return null;
         }
+    }
+
+    private String finalizePendingOrder(HttpSession session, String pendingSessionKey) throws Exception {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> pending = (Map<String, Object>) session.getAttribute(pendingSessionKey);
+        if (pending == null) {
+            throw new Exception("No pending order");
+        }
+
+        String token = (String) pending.get("token");
+        Map<String, Object> orderData = new HashMap<>(pending);
+        orderData.remove("orderId");
+        orderData.remove("token");
+
+        String realOrderId = orderService.createOrder(orderData, token);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> lastOrder = (Map<String, Object>) session.getAttribute("lastOrder");
+        if (lastOrder != null) {
+            lastOrder.put("orderId", realOrderId);
+            session.setAttribute("lastOrder", lastOrder);
+        }
+
+        session.removeAttribute(pendingSessionKey);
+        cartService.clearCart(session);
+        clearAppliedVoucherSession(session);
+        return realOrderId;
     }
 }

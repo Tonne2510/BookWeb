@@ -273,103 +273,7 @@
             <i class="fas fa-headset"></i>Hỗ trợ 24/7
           </div>
         </div>
-<<<<<<< HEAD
       </div>
-=======
-        
-        <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb" class="breadcrumb-custom">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/"><i class="fas fa-home me-1"></i>Trang chủ</a></li>
-                <li class="breadcrumb-item"><a href="/cart"><i class="fas fa-shopping-cart me-1"></i>Giỏ hàng</a></li>
-                <li class="breadcrumb-item active"><i class="fas fa-credit-card me-1"></i>Thanh toán</li>
-            </ol>
-        </nav>
-        
-        <!-- Main Content -->
-        <div class="checkout-row">
-            <!-- Form Section -->
-            <div>
-                <!-- Error/Success Messages -->
-                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
-                    <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                
-                <!-- Checkout Form -->
-                <form method="POST" action="/cart/checkout" id="checkoutForm" class="needs-validation">
-                    <!-- Customer Information -->
-                    <div class="form-section">
-                        <h3><i class="fas fa-user me-2"></i>Thông Tin Khách Hàng</h3>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Họ Tên <span class="required">*</span></label>
-                                <input type="text" class="form-control" name="fullName" required 
-                                       placeholder="Nhập họ tên đầy đủ"
-                                       th:value="${user != null ? user.firstName + ' ' + user.lastName : ''}">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Email <span class="required">*</span></label>
-                                <input type="email" class="form-control" name="email" required 
-                                       placeholder="example@email.com"
-                                       th:value="${user != null ? user.email : ''}">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Số Điện Thoại <span class="required">*</span></label>
-                            <input type="tel" class="form-control" name="phone" required 
-                                   placeholder="0123456789"
-                                   th:value="${user != null ? user.phone : ''}">
-                        </div>
-                    </div>
-                    
-                    <!-- Shipping Address -->
-                    <div class="form-section">
-                        <h3><i class="fas fa-map-marker-alt me-2"></i>Địa Chỉ Giao Hàng</h3>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Tỉnh/Thành Phố <span class="required">*</span></label>
-                                <input type="text" class="form-control" name="city" required 
-                                       placeholder="TP. Hồ Chí Minh">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Quận/Huyện <span class="required">*</span></label>
-                                <input type="text" class="form-control" name="district" required 
-                                       placeholder="Quận 1">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Địa Chỉ Chi Tiết <span class="required">*</span></label>
-                            <textarea class="form-control" name="shippingAddress" rows="3" required
-                                      placeholder="Số nhà, đường phố, tòa nhà, v.v."></textarea>
-                        </div>
-                    </div>
-                    
-                    <!-- Payment Method -->
-                    <div class="form-section">
-                        <h3><i class="fas fa-wallet me-2"></i>Phương Thức Thanh Toán</h3>
-                        
-                        <div class="payment-method active" onclick="selectPayment(this, 'cash_on_delivery')">
-                            <input type="radio" name="paymentMethod" value="cash_on_delivery" id="paymentCOD" 
-                                   required checked>
-                            <label for="paymentCOD" class="ms-2">
-                                <i class="fas fa-money-bill me-1"></i>Thanh Toán Khi Nhận (COD)
-                                <br><small class="fw-normal text-muted">Thanh toán trực tiếp cho nhân viên giao hàng</small>
-                            </label>
-                        </div>
-                        
-                        <div class="payment-method" onclick="selectPayment(this, 'vietqr')">
-                            <input type="radio" name="paymentMethod" value="vietqr" id="paymentVietQR">
-                            <label for="paymentVietQR" class="ms-2">
-                                <i class="fas fa-qrcode me-1" style="color:#00a651;"></i>Chuyển Khoản VietQR
-                                <br><small class="fw-normal text-muted">Quét mã QR bằng app ngân hàng &mdash; tự động điền số tiền</small>
-                            </label>
-                        </div>
->>>>>>> 4620dad7640c4c94fd9f5ca537628b4e6bf40560
 
       <nav aria-label="breadcrumb" class="breadcrumb-custom">
         <ol class="breadcrumb">
@@ -387,7 +291,6 @@
         </ol>
       </nav>
 
-<<<<<<< HEAD
       <div class="checkout-row">
         <div>
           <div
@@ -421,9 +324,7 @@
               <h3><i class="fas fa-user me-2"></i>Thông Tin Khách Hàng</h3>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label"
-                    >Họ Tên <span class="required">*</span></label
-                  >
+                  <label class="form-label">Họ Tên <span class="required">*</span></label>
                   <input
                     type="text"
                     class="form-control"
@@ -432,68 +333,6 @@
                     placeholder="Nhập họ tên đầy đủ"
                     th:value="${user != null ? user.firstName + ' ' + user.lastName : ''}"
                   />
-=======
-                        <div class="payment-method" onclick="selectPayment(this, 'credit_card')">
-                            <input type="radio" name="paymentMethod" value="credit_card" id="paymentWallet">
-                            <label for="paymentWallet" class="ms-2">
-                                <i class="fas fa-credit-card me-1"></i>Thẻ Tín Dụng
-                                <br><small class="fw-normal text-muted">Thanh toán bằng thẻ tín dụng (sẽ cập nhật sớm)</small>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Submit Button -->
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-check me-2"></i>Xác Nhận Đơn Hàng
-                    </button>
-                </form>
-            </div>
-            
-            <!-- Order Summary Sidebar -->
-            <div class="order-summary" th:if="${cart != null && cart.items != null}">
-                <h3><i class="fas fa-list me-2"></i>Đơn Hàng Của Bạn</h3>
-                
-                <div th:if="${cart.items.size() > 0}">
-                    <div th:each="item : ${cart.items}" class="order-item">
-                        <div>
-                            <div class="item-name" th:text="${item.title}">Book Title</div>
-                            <div class="item-qty">SL: <span th:text="${item.quantity}">1</span></div>
-                        </div>
-                        <div class="item-price" th:text="'₫' + ${#numbers.formatInteger(item.quantity * item.price, 0)}">₫0</div>
-                    </div>
-                    
-                    <div class="order-total">
-                        <div class="total-row" th:if="${appliedVoucherValidation != null && appliedVoucherValidation.voucher != null}" style="margin-bottom: 14px; align-items:flex-start;">
-                            <span style="min-width: 90px;">Voucher:</span>
-                            <div style="width:72%; font-size:0.9em;">
-                                <div><strong th:text="${appliedVoucherValidation.voucher.code}"></strong></div>
-                                <div th:text="${appliedVoucherValidation.voucher.name}"></div>
-                                <div class="text-muted" th:text="${appliedVoucherValidation.voucher.description}"></div>
-                            </div>
-                        </div>
-                        <div th:if="${appliedVoucherValidation == null}" style="font-size:0.85em; margin-bottom:10px; color:#666;">
-                            Bạn có thể chọn và áp dụng voucher tại trang giỏ hàng.
-                        </div>
-                        <div th:if="${appliedVoucherValidation != null}" style="font-size:0.85em; margin-bottom:10px; color:#198754;"
-                             th:text="${appliedVoucherValidation.message}"></div>
-                        <div class="total-row">
-                            <span>Tạm Tính:</span>
-                            <span id="subtotalValue" th:data-subtotal="${cart.total}" th:text="'₫' + ${#numbers.formatInteger(cart.total, 0)}">₫0</span>
-                        </div>
-                        <div class="total-row" id="voucherDiscountRow" th:if="${appliedVoucherValidation != null}" style="color:#198754;">
-                            <span>Giảm Voucher:</span>
-                            <span id="voucherDiscountValue" th:text="'-₫' + ${#numbers.formatInteger(appliedVoucherValidation.discountAmount, 0)}">-₫0</span>
-                        </div>
-                        <div class="total-row">
-                            <span><i class="fas fa-truck me-1"></i>Vận Chuyển:</span>
-                            <span style="color: #28a745;">Miễn Phí</span>
-                        </div>
-                        <div class="total-row grand-total">
-                            <span>Tổng Cộng:</span>
-                            <span id="grandTotalValue" th:text="'₫' + ${#numbers.formatInteger(cartFinalTotal, 0)}">₫0</span>
-                        </div>
-                    </div>
->>>>>>> 4620dad7640c4c94fd9f5ca537628b4e6bf40560
                 </div>
                 <div class="form-group">
                   <label class="form-label"
@@ -600,9 +439,10 @@
                 />
                 <label for="paymentMoMo" class="ms-2">
                   <img
-                    src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png"
-                    height="20"
+                    src="/img/momo-logo.svg"
+                    height="22"
                     class="me-1"
+                    alt="MoMo"
                   />
                   Ví Điện Tử MoMo <br /><small class="fw-normal text-muted"
                     >Thanh toán nhanh qua ứng dụng MoMo</small
@@ -818,67 +658,21 @@
           preview.style.display = method === "vietqr" ? "block" : "none";
       }
 
-      // Xử lý Form Submit & MoMo
+      // Form validation and submit
       const form = document.getElementById("checkoutForm");
       if (form) {
-        form.addEventListener("submit", async function (e) {
-          // 1. Kiểm tra validation của Bootstrap
+        form.addEventListener("submit", function (e) {
           if (!form.checkValidity()) {
             e.preventDefault();
             e.stopPropagation();
             form.classList.add("was-validated");
-            return; // Dừng lại nếu chưa điền đủ thông tin
+            return;
           }
 
-          // 2. Nếu điền đủ rồi, kiểm tra xem có chọn MoMo không
-          const selectedMethod = document.querySelector(
-            'input[name="paymentMethod"]:checked',
-          )?.value;
-
-          if (selectedMethod === "momo") {
-            e.preventDefault(); // Chặn form không gửi cho Java Spring Boot
-
-            // Lấy tổng tiền
-            const amountElement = document.getElementById("grandTotalValue");
-            const amount = amountElement
-              ? amountElement.getAttribute("data-amount")
-              : "50000";
-            const submitBtn = document.getElementById("submitBtn");
-
-            try {
-              // Đổi nút thành đang tải
-              submitBtn.disabled = true;
-              submitBtn.innerHTML =
-                '<i class="fas fa-spinner fa-spin me-2"></i>Đang kết nối MoMo...';
-
-              // Gọi sang Node.js (Port 4000)
-              const response = await fetch(
-                "http://localhost:4000/api/momo/create-payment",
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ amount: amount }),
-                },
-              );
-
-              const data = await response.json();
-              if (data.payUrl) {
-                window.location.href = data.payUrl; // Chuyển trang thành công!
-              } else {
-                alert("Lỗi: Không lấy được link thanh toán từ MoMo.");
-                submitBtn.disabled = false;
-                submitBtn.innerHTML =
-                  '<i class="fas fa-check me-2"></i>Xác Nhận Đơn Hàng';
-              }
-            } catch (error) {
-              console.error(error);
-              alert(
-                "Lỗi kết nối tới Server MoMo (Port 4000)! Hãy đảm bảo Terminal Backend đang chạy.",
-              );
-              submitBtn.disabled = false;
-              submitBtn.innerHTML =
-                '<i class="fas fa-check me-2"></i>Xác Nhận Đơn Hàng';
-            }
+          const submitBtn = document.getElementById("submitBtn");
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Dang xu ly...';
           }
         });
       }
@@ -943,31 +737,8 @@
               msgEl.style.color = "#dc3545";
               msgEl.textContent = "Không thể kiểm tra voucher lúc này";
             });
-<<<<<<< HEAD
         });
       }
-=======
-            // Add active class to clicked
-            element.classList.add('active');
-            // Check the radio button
-            element.querySelector('input[type="radio"]').checked = true;
-            // Toggle VietQR preview
-            const preview = document.getElementById('vietqr-preview');
-            if (preview) preview.style.display = (method === 'vietqr') ? 'block' : 'none';
-        }
-        
-        // Form validation
-        const form = document.getElementById('checkoutForm');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                if (!form.checkValidity()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            });
-        }
->>>>>>> 4620dad7640c4c94fd9f5ca537628b4e6bf40560
     </script>
   </body>
 </html>

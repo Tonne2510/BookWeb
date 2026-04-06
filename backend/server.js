@@ -16,6 +16,23 @@ dotenv.config();
 const app = express();
 app.set("trust proxy", 1);
 
+const getAllowedOrigins = () => {
+  const configured = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  const defaults = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "https://localhost:8080",
+  ];
+
+  return Array.from(new Set([...defaults, ...configured]));
+};
+
+const allowedOrigins = getAllowedOrigins();
+
 const ensureReviewImageColumn = async () => {
   try {
     await db.query(
@@ -130,7 +147,18 @@ const ensureVoucherRecipientsTable = async () => {
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:8080",
+    origin: (origin, callback) => {
+      // Allow non-browser requests (e.g., server-to-server, curl)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked origin: ${origin}`));
+    },
     credentials: true,
   }),
 );
@@ -266,14 +294,10 @@ const startServer = async () => {
 // Database Connection
 db.authenticate()
   .then(() => {
-<<<<<<< HEAD
     console.log("✅ Database connected successfully");
-=======
-    console.log('✅ Database connected successfully');
     return db.sync();
   })
   .then(() => {
->>>>>>> 4620dad7640c4c94fd9f5ca537628b4e6bf40560
     return ensureReviewImageColumn();
   })
   .then(() => {

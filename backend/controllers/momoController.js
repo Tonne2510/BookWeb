@@ -1,6 +1,30 @@
 const crypto = require("crypto");
 const axios = require("axios");
 
+const createGatewayRequest = async (requestBody) => {
+  const endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
+  let lastError;
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const response = await axios.post(endpoint, requestBody, {
+        headers: { "Content-Type": "application/json" },
+        timeout: 15000,
+      });
+      return response;
+    } catch (error) {
+      lastError = error;
+      // Retry only for network/timeout/5xx gateway errors
+      const status = error.response?.status;
+      if (!(status >= 500 || error.code === "ECONNABORTED" || !status) || attempt === 2) {
+        throw lastError;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
 const createMoMoPayment = async (req, res) => {
   try {
     const amount = Number(req.body.amount) || 50000;
@@ -11,12 +35,12 @@ const createMoMoPayment = async (req, res) => {
     const secretKey = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
 
     const orderInfo = "Thanh toan don hang BookWeb";
-    const redirectUrl = "http://localhost:8080/cart";
+    const redirectUrl = req.body.redirectUrl || "http://localhost:8080/cart/momo-return";
     const ipnUrl = "https://webhook.site/b3088a6a-2d1f-48bb-b1be-1a525f2b86ab";
     const requestType = "captureWallet";
     const extraData = "";
-    const orderId = partnerCode + new Date().getTime();
-    const requestId = orderId;
+    const orderId = req.body.orderId || (partnerCode + new Date().getTime());
+    const requestId = `${orderId}-${Date.now()}`;
 
     // Mã hóa chữ ký
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
@@ -41,16 +65,7 @@ const createMoMoPayment = async (req, res) => {
       lang: "vi",
     };
 
-    // GỌI API BẰNG AXIOS VỚI ENDPOINT TEST MỚI
-    const response = await axios.post(
-      "https://test-payment.momo.vn/v2/gateway/api/create",
-      requestBody,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    const response = await createGatewayRequest(requestBody);
 
     if (response.data && response.data.payUrl) {
       res.status(200).json({ payUrl: response.data.payUrl });
@@ -63,7 +78,7 @@ const createMoMoPayment = async (req, res) => {
       "Lỗi sập Server MoMo:",
       error.response ? error.response.data : error.message,
     );
-    res.status(500).json({ message: "Máy chủ MoMo đang bị lỗi Test!" });
+    res.status(500).json({ message: "Máy chủ MoMo đang bị lỗi Test! Vui lòng thử lại sau ít phút." });
   }
 };
 

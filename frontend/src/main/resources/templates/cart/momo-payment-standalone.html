@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dang chuyen huong MoMo</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    body { background: #f6f7fb; }
+    .box {
+      max-width: 560px;
+      margin: 12vh auto;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #eceff5;
+      padding: 30px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+    .momo-title { color: #a50064; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="box text-center">
+    <img src="/img/momo-logo.svg" alt="MoMo" style="height:44px; margin-bottom:12px;" />
+    <h4 class="momo-title">Dang ket noi cong thanh toan MoMo</h4>
+    <p class="text-muted mb-3">Vui long cho trong giay lat. He thong se tu dong chuyen ban den trang quet ma.</p>
+    <div class="mb-3">
+      <div><strong>Ma tam:</strong> <span th:text="${orderId}"></span></div>
+      <div><strong>So tien:</strong> <span th:text="${#numbers.formatDecimal(amount, 1, 0)}"></span> VND</div>
+    </div>
+    <div class="spinner-border text-primary" role="status"></div>
+    <div class="mt-3">
+      <button id="retryBtn" class="btn btn-outline-primary" style="display:none;">Thu lai</button>
+      <a href="/cart/checkout" class="btn btn-link">Quay lai thanh toan</a>
+    </div>
+  </div>
+
+  <script th:inline="javascript">
+    const orderId = /*[[${orderId}]]*/ "";
+    const amount = /*[[${amount}]]*/ 0;
+  </script>
+  <script>
+    async function startMoMoPayment() {
+      const retryBtn = document.getElementById("retryBtn");
+      try {
+        const response = await fetch("http://localhost:4000/api/momo/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: amount,
+            orderId: orderId,
+            redirectUrl: window.location.origin + "/cart/momo-return"
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.payUrl) {
+          throw new Error(data.message || "Khong lay duoc link thanh toan MoMo.");
+        }
+
+        window.location.href = data.payUrl;
+      } catch (err) {
+        alert(err.message || "Khong the ket noi MoMo luc nay.");
+        retryBtn.style.display = "inline-block";
+      }
+    }
+
+    document.getElementById("retryBtn").addEventListener("click", startMoMoPayment);
+    startMoMoPayment();
+  </script>
+</body>
+</html>
