@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -205,8 +205,8 @@
             <!-- Content Area -->
             <div class="admin-content">
                 <div class="welcome-section">
-                    <h2>Xin ch�o Admin!</h2>
-                    <p>Ch�o m?ng d?n Dashboard qu?n tr? BookWeb. Du?i d�y l� t�m t?t d? li?u h? th?ng c?a b?n.</p>
+                    <h2>Xin chào Admin!</h2>
+                    <p>Chào mừng đến Dashboard quản trị BookWeb. Dưới đây là tóm tắt dữ liệu hệ thống của bạn.</p>
                 </div>
                 
                 <div class="row">
@@ -214,7 +214,7 @@
                         <div class="stat-card books">
                             <div class="stat-icon"><i class="fas fa-book-open"></i></div>
                             <div class="stat-value" th:text="${totalBooks ?: 0}">0</div>
-                            <div class="stat-label">S�ch</div>
+                            <div class="stat-label">Sách</div>
                         </div>
                     </div>
                     
@@ -222,7 +222,7 @@
                         <div class="stat-card categories">
                             <div class="stat-icon"><i class="fas fa-list"></i></div>
                             <div class="stat-value" th:text="${totalCategories ?: 0}">0</div>
-                            <div class="stat-label">Danh M?c</div>
+                            <div class="stat-label">Danh Mục</div>
                         </div>
                     </div>
                     
@@ -230,7 +230,7 @@
                         <div class="stat-card authors">
                             <div class="stat-icon"><i class="fas fa-user-edit"></i></div>
                             <div class="stat-value" th:text="${totalAuthors ?: 0}">0</div>
-                            <div class="stat-label">T�c Gi?</div>
+                            <div class="stat-label">Tác Giả</div>
                         </div>
                     </div>
                     
@@ -238,7 +238,7 @@
                         <div class="stat-card orders">
                             <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
                             <div class="stat-value" th:text="${totalOrders ?: 0}">0</div>
-                            <div class="stat-label">�on H�ng</div>
+                            <div class="stat-label">Đơn Hàng</div>
                         </div>
                     </div>
                 </div>
