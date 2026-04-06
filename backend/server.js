@@ -216,6 +216,9 @@ const startServer = async () => {
 db.authenticate()
   .then(() => {
     console.log('✅ Database connected successfully');
+    return db.sync();
+  })
+  .then(() => {
     return ensureReviewImageColumn();
   })
   .then(() => {
@@ -226,9 +229,6 @@ db.authenticate()
   })
   .then(() => {
     return ensureVoucherRecipientsTable();
-  })
-  .then(() => {
-    return db.sync();
   })
   .then(() => {
     startServer();
