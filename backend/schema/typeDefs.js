@@ -31,6 +31,7 @@ const typeDefs = gql`
     shipped
     delivered
     cancelled
+    confirmed
   }
 
   enum PaymentMethod {
@@ -38,6 +39,11 @@ const typeDefs = gql`
     bank_transfer
     cash_on_delivery
     vietqr
+  }
+
+  enum VoucherType {
+    percent
+    fixed
   }
 
   type User {
@@ -114,6 +120,7 @@ const typeDefs = gql`
     rating: Int!
     title: String
     content: String!
+    imageUrl: String
     helpfulCount: Int
     status: ReviewStatus!
     user: User!
@@ -129,11 +136,14 @@ const typeDefs = gql`
     customerEmail: String
     customerPhone: String
     totalPrice: Float!
+    voucherCode: String
+    voucherDiscount: Float
     totalDiscount: Float
     shippingAddress: String!
     shippingCost: Float
     paymentMethod: PaymentMethod!
     status: OrderStatus!
+    reviewed: Boolean!
     notes: String
     user: User!
     items: [OrderItem!]
@@ -148,6 +158,48 @@ const typeDefs = gql`
     discount: Float
     book: Book!
     order: Order!
+  }
+
+  type Favorite {
+    id: ID!
+    user: User!
+    book: Book!
+    createdAt: String!
+  }
+
+  type Voucher {
+    id: ID!
+    code: String!
+    name: String!
+    description: String
+    type: VoucherType!
+    value: Float!
+    minOrderValue: Float
+    maxDiscount: Float
+    totalUsageLimit: Int
+    usedCount: Int
+    perUserLimit: Int
+    startDate: String!
+    endDate: String!
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type VoucherValidation {
+    valid: Boolean!
+    message: String!
+    voucher: Voucher
+    discountAmount: Float!
+    finalAmount: Float!
+  }
+
+  type PaginatedFavorites {
+    favorites: [Favorite!]!
+    total: Int!
+    page: Int!
+    limit: Int!
+    pages: Int!
   }
 
   type AuthPayload {
@@ -235,6 +287,14 @@ const typeDefs = gql`
     # Reviews
     reviews(bookId: ID, page: Int, limit: Int, status: ReviewStatus): PaginatedReviews!
     userReviews(page: Int, limit: Int): PaginatedReviews!
+
+    # Favorites
+    myFavorites(page: Int, limit: Int): PaginatedFavorites!
+    isFavorite(bookId: ID!): Boolean!
+
+    # Vouchers
+    vouchers(page: Int, limit: Int, isActive: Boolean, searchTerm: String): [Voucher!]!
+    validateVoucher(code: String!, subtotal: Float!): VoucherValidation!
 
     # Orders
     order(id: ID!): Order
@@ -343,16 +403,53 @@ const typeDefs = gql`
     deleteAuthor(id: ID!): String!
 
     # Reviews
-    createReview(bookId: ID!, rating: Int!, title: String, content: String!): Review!
+    createReview(bookId: ID!, rating: Int!, title: String, content: String!, imageUrl: String, orderId: ID): Review!
     updateReview(id: ID!, rating: Int, title: String, content: String): Review!
     deleteReview(id: ID!): String!
     approveReview(id: ID!): Review!
     rejectReview(id: ID!): Review!
 
+    # Favorites
+    addToFavorites(bookId: ID!): Favorite!
+    removeFromFavorites(bookId: ID!): String!
+
     # Orders
-    createOrder(items: [OrderItemInput!]!, shippingAddress: String!, paymentMethod: PaymentMethod!, customerName: String, customerEmail: String, customerPhone: String): Order!
+    createOrder(items: [OrderItemInput!]!, shippingAddress: String!, paymentMethod: PaymentMethod!, customerName: String, customerEmail: String, customerPhone: String, voucherCode: String): Order!
     updateOrderStatus(id: ID!, status: OrderStatus!): Order!
     cancelOrder(id: ID!): Order!
+    confirmOrder(id: ID!): Order!
+
+    # Vouchers (Admin)
+    createVoucher(
+      code: String!
+      name: String!
+      description: String
+      type: VoucherType!
+      value: Float!
+      minOrderValue: Float
+      maxDiscount: Float
+      totalUsageLimit: Int
+      perUserLimit: Int
+      startDate: String!
+      endDate: String!
+      isActive: Boolean
+    ): Voucher!
+    updateVoucher(
+      id: ID!
+      name: String
+      description: String
+      type: VoucherType
+      value: Float
+      minOrderValue: Float
+      maxDiscount: Float
+      totalUsageLimit: Int
+      perUserLimit: Int
+      startDate: String
+      endDate: String
+      isActive: Boolean
+    ): Voucher!
+    toggleVoucherStatus(id: ID!): Voucher!
+    deleteVoucher(id: ID!): String!
   }
 
   input OrderItemInput {

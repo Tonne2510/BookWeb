@@ -3,6 +3,7 @@ package com.bookweb.controller;
 import com.bookweb.service.CartService;
 import com.bookweb.service.AuthService;
 import com.bookweb.service.OrderService;
+import com.bookweb.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,6 +25,9 @@ public class CartController {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private VoucherService voucherService;
 
     /**
      * View shopping cart
@@ -158,7 +162,31 @@ public class CartController {
 
         model.addAttribute("cart", cart);
         model.addAttribute("cartTotal", cart.get("total"));
+        model.addAttribute("appliedVoucherCode", "");
         return "cart/checkout-standalone";
+    }
+
+    @PostMapping("/validate-voucher")
+    @ResponseBody
+    public ResponseEntity<?> validateVoucher(
+            @RequestParam String code,
+            @RequestParam Double subtotal) {
+        try {
+            String token = com.bookweb.util.TokenUtil.getTokenFromRequest();
+            if (token == null) {
+                return ResponseEntity.status(401).body(Map.of(
+                        "valid", false,
+                        "message", "Vui lòng đăng nhập"
+                ));
+            }
+            Map<String, Object> result = voucherService.validateVoucher(code, subtotal, token);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "valid", false,
+                    "message", e.getMessage()
+            ));
+        }
     }
 
     /**
@@ -173,6 +201,7 @@ public class CartController {
             @RequestParam String district,
             @RequestParam String shippingAddress,
             @RequestParam String paymentMethod,
+            @RequestParam(required = false) String voucherCode,
             HttpSession session,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -196,7 +225,22 @@ public class CartController {
             orderData.put("shippingAddress", fullShippingAddress);
             orderData.put("paymentMethod", paymentMethod);
             orderData.put("items", items);
-            orderData.put("total", cart.get("total"));
+
+            double subtotal = ((Number) cart.get("total")).doubleValue();
+            double voucherDiscount = 0;
+            double finalTotal = subtotal;
+            if (voucherCode != null && !voucherCode.isBlank()) {
+                Map<String, Object> voucherValidation = voucherService.validateVoucher(voucherCode, subtotal, token);
+                boolean valid = (Boolean) voucherValidation.get("valid");
+                if (!valid) {
+                    redirectAttributes.addFlashAttribute("error", voucherValidation.get("message"));
+                    return "redirect:/cart/checkout";
+                }
+                voucherDiscount = ((Number) voucherValidation.get("discountAmount")).doubleValue();
+                finalTotal = ((Number) voucherValidation.get("finalAmount")).doubleValue();
+                orderData.put("voucherCode", voucherCode.trim().toUpperCase());
+            }
+            orderData.put("total", finalTotal);
 
             if ("vietqr".equals(paymentMethod)) {
                 // VietQR: DON'T create order yet — store data in session, create after payment confirmed
@@ -213,7 +257,9 @@ public class CartController {
                 lastOrder.put("phone", phone);
                 lastOrder.put("shippingAddress", fullShippingAddress);
                 lastOrder.put("paymentMethod", paymentMethod);
-                lastOrder.put("total", cart.get("total"));
+                lastOrder.put("total", finalTotal);
+                lastOrder.put("voucherDiscount", voucherDiscount);
+                lastOrder.put("voucherCode", voucherCode != null ? voucherCode.trim().toUpperCase() : null);
                 session.setAttribute("lastOrder", lastOrder);
                 return "redirect:/cart/payment";
             }
@@ -229,7 +275,9 @@ public class CartController {
             lastOrder.put("phone", phone);
             lastOrder.put("shippingAddress", fullShippingAddress);
             lastOrder.put("paymentMethod", paymentMethod);
-            lastOrder.put("total", cart.get("total"));
+            lastOrder.put("total", finalTotal);
+            lastOrder.put("voucherDiscount", voucherDiscount);
+            lastOrder.put("voucherCode", voucherCode != null ? voucherCode.trim().toUpperCase() : null);
             session.setAttribute("lastOrder", lastOrder);
             return "redirect:/cart/success";
 

@@ -215,6 +215,14 @@
                     <span class="info-label"><i class="fas fa-envelope me-2"></i>Email:</span>
                     <span class="info-value" th:text="${email}">email@example.com</span>
                 </div>
+                <div class="info-row" th:if="${voucherCode != null and !#strings.isEmpty(voucherCode)}">
+                    <span class="info-label"><i class="fas fa-ticket-alt me-2"></i>Voucher:</span>
+                    <span class="info-value" th:text="${voucherCode}">BOOK10</span>
+                </div>
+                <div class="info-row" th:if="${voucherDiscount != null and voucherDiscount > 0}">
+                    <span class="info-label"><i class="fas fa-tags me-2"></i>Giảm giá:</span>
+                    <span class="info-value" style="color:#198754;" th:text="'-₫' + ${#numbers.formatInteger(voucherDiscount, 0)}">-₫0</span>
+                </div>
                 <div class="info-row">
                     <span class="info-label"><i class="fas fa-calculator me-2"></i>Tổng Tiền:</span>
                     <span class="info-value" style="color: #28a745;" th:text="'₫' + ${#numbers.formatInteger(total, 0)}">₫0</span>

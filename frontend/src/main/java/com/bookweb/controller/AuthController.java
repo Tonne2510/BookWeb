@@ -17,6 +17,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -314,5 +317,53 @@ public class AuthController {
         } catch (Exception e) {
             return "redirect:/auth/login";
         }
+    }
+
+    @PostMapping("/orders/{id}/confirm")
+    public String confirmOrder(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        try {
+            String token = TokenUtil.getTokenFromRequest();
+            if (token == null) return "redirect:/auth/login";
+            orderService.confirmOrder(id, token);
+            redirectAttributes.addFlashAttribute("message", "Đã xác nhận nhận hàng thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi xác nhận: " + e.getMessage());
+        }
+        return "redirect:/auth/orders";
+    }
+
+    @PostMapping("/orders/{id}/review")
+    public String submitOrderReview(
+            @PathVariable String id,
+            @RequestParam String bookId,
+            @RequestParam int rating,
+            @RequestParam(required = false) String title,
+            @RequestParam String content,
+            @RequestParam(required = false) MultipartFile reviewImage,
+            RedirectAttributes redirectAttributes) {
+        try {
+            String token = TokenUtil.getTokenFromRequest();
+            if (token == null) return "redirect:/auth/login";
+            String reviewImageUrl = null;
+            if (reviewImage != null && !reviewImage.isEmpty()) {
+                try {
+                    String uploadDir = "uploads/reviews/";
+                    Files.createDirectories(Paths.get(uploadDir));
+                    String safeName = reviewImage.getOriginalFilename() == null
+                            ? "review.jpg"
+                            : reviewImage.getOriginalFilename().replaceAll("[^a-zA-Z0-9._-]", "_");
+                    String fileName = System.currentTimeMillis() + "_" + safeName;
+                    reviewImage.transferTo(Paths.get(uploadDir, fileName));
+                    reviewImageUrl = "/" + uploadDir + fileName;
+                } catch (Exception e) {
+                    logger.error("Review image upload error: {}", e.getMessage());
+                }
+            }
+            orderService.submitOrderReview(id, bookId, rating, title, content, reviewImageUrl, token);
+            redirectAttributes.addFlashAttribute("message", "Cảm ơn bạn đã đánh giá sản phẩm!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi gửi đánh giá: " + e.getMessage());
+        }
+        return "redirect:/auth/orders";
     }
 }

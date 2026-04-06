@@ -1,4 +1,4 @@
-const { User, Category, Author, Book, Review, Order, OrderItem } = require('../models');
+const { User, Category, Author, Book, Review, Order, OrderItem, Favorite, Voucher, VoucherUsage } = require('../models');
 const authService = require('../utils/authService');
 const emailService = require('../utils/emailService');
 const { generateSlug } = require('../utils/slugService');
@@ -6,6 +6,73 @@ const { Op, Sequelize } = require('sequelize');
 
 // In-memory OTP store: { email -> { otp, expires } }
 const otpStore = new Map();
+
+const calculateVoucherDiscount = async ({ code, subtotal, userId }) => {
+  const safeSubtotal = Number(subtotal || 0);
+  if (!code) {
+    return { valid: true, message: 'No voucher', voucher: null, discountAmount: 0, finalAmount: safeSubtotal };
+  }
+
+  const normalizedCode = code.trim().toUpperCase();
+  const voucher = await Voucher.findOne({ where: { code: normalizedCode } });
+  if (!voucher) {
+    return { valid: false, message: 'Mã voucher không tồn tại', voucher: null, discountAmount: 0, finalAmount: safeSubtotal };
+  }
+
+  if (!voucher.isActive) {
+    return { valid: false, message: 'Voucher hiện không khả dụng', voucher, discountAmount: 0, finalAmount: safeSubtotal };
+  }
+
+  const now = new Date();
+  if (voucher.startDate && now < voucher.startDate) {
+    return { valid: false, message: 'Voucher chưa đến thời gian áp dụng', voucher, discountAmount: 0, finalAmount: safeSubtotal };
+  }
+  if (voucher.endDate && now > voucher.endDate) {
+    return { valid: false, message: 'Voucher đã hết hạn', voucher, discountAmount: 0, finalAmount: safeSubtotal };
+  }
+
+  if (voucher.totalUsageLimit != null && voucher.usedCount >= voucher.totalUsageLimit) {
+    return { valid: false, message: 'Voucher đã hết lượt sử dụng', voucher, discountAmount: 0, finalAmount: safeSubtotal };
+  }
+
+  if (safeSubtotal < Number(voucher.minOrderValue || 0)) {
+    return {
+      valid: false,
+      message: `Đơn hàng tối thiểu ₫${Math.round(Number(voucher.minOrderValue || 0)).toLocaleString('vi-VN')} để dùng voucher này`,
+      voucher,
+      discountAmount: 0,
+      finalAmount: safeSubtotal
+    };
+  }
+
+  if (userId) {
+    const usageCount = await VoucherUsage.count({ where: { voucherId: voucher.id, userId } });
+    if (usageCount >= Number(voucher.perUserLimit || 1)) {
+      return { valid: false, message: 'Bạn đã dùng hết lượt voucher này', voucher, discountAmount: 0, finalAmount: safeSubtotal };
+    }
+  }
+
+  let discountAmount = 0;
+  if (voucher.type === 'percent') {
+    discountAmount = (safeSubtotal * Number(voucher.value || 0)) / 100;
+    if (voucher.maxDiscount != null) {
+      discountAmount = Math.min(discountAmount, Number(voucher.maxDiscount));
+    }
+  } else {
+    discountAmount = Number(voucher.value || 0);
+  }
+
+  discountAmount = Math.max(0, Math.min(discountAmount, safeSubtotal));
+  const finalAmount = Math.max(0, safeSubtotal - discountAmount);
+
+  return {
+    valid: true,
+    message: 'Áp dụng voucher thành công',
+    voucher,
+    discountAmount,
+    finalAmount
+  };
+};
 
 const resolvers = {
   Query: {
@@ -216,6 +283,60 @@ const resolvers = {
         limit,
         pages
       };
+    },
+
+    // Favorites
+    myFavorites: async (_, { page = 1, limit = 20 }, { user }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const { count, rows } = await Favorite.findAndCountAll({
+        where: { userId: user.id },
+        include: [
+          { model: Book, include: [{ model: Category }, { model: Author }] }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit,
+        offset: (page - 1) * limit
+      });
+
+      const pages = Math.ceil(count / limit);
+      return {
+        favorites: rows,
+        total: count,
+        page,
+        limit,
+        pages
+      };
+    },
+
+    isFavorite: async (_, { bookId }, { user }) => {
+      if (!user) return false;
+      const fav = await Favorite.findOne({ where: { userId: user.id, bookId } });
+      return fav !== null;
+    },
+
+    // Vouchers
+    vouchers: async (_, { page = 1, limit = 20, isActive, searchTerm }, { user }) => {
+      if (!user || user.role !== 'admin') throw new Error('Not authorized');
+      const where = {};
+      if (typeof isActive === 'boolean') where.isActive = isActive;
+      if (searchTerm) {
+        where[Op.or] = [
+          { code: { [Op.like]: `%${searchTerm}%` } },
+          { name: { [Op.like]: `%${searchTerm}%` } }
+        ];
+      }
+      return Voucher.findAll({
+        where,
+        order: [['createdAt', 'DESC']],
+        limit,
+        offset: (page - 1) * limit
+      });
+    },
+
+    validateVoucher: async (_, { code, subtotal }, { user }) => {
+      if (!user) throw new Error('Not authenticated');
+      return calculateVoucherDiscount({ code, subtotal, userId: user.id });
     },
 
     // Orders
@@ -704,7 +825,7 @@ const resolvers = {
     },
 
     // Review Mutations
-    createReview: async (_, { bookId, rating, title, content }, { user }) => {
+    createReview: async (_, { bookId, rating, title, content, imageUrl, orderId }, { user }) => {
       if (!user) throw new Error('Not authenticated');
 
       const review = await Review.create({
@@ -712,7 +833,9 @@ const resolvers = {
         userId: user.id,
         rating,
         title,
-        content
+        content,
+        imageUrl,
+        status: 'approved'
       });
 
       // Recalculate average rating from approved reviews
@@ -720,6 +843,14 @@ const resolvers = {
       if (approvedReviews.length > 0) {
         const avg = approvedReviews.reduce((sum, r) => sum + r.rating, 0) / approvedReviews.length;
         await Book.update({ rating: Math.round(avg * 10) / 10 }, { where: { id: bookId } });
+      }
+
+      // If orderId provided, auto-confirm the order and mark as reviewed
+      if (orderId) {
+        const order = await Order.findByPk(orderId);
+        if (order && order.userId === user.id && ['delivered', 'confirmed'].includes(order.status)) {
+          await order.update({ status: 'confirmed', reviewed: true });
+        }
       }
 
       return Review.findByPk(review.id, {
@@ -815,10 +946,10 @@ const resolvers = {
     },
 
     // Order Mutations
-    createOrder: async (_, { items, shippingAddress, paymentMethod, customerName, customerEmail, customerPhone }, { user }) => {
+    createOrder: async (_, { items, shippingAddress, paymentMethod, customerName, customerEmail, customerPhone, voucherCode }, { user }) => {
       if (!user) throw new Error('Not authenticated');
 
-      let totalPrice = 0;
+      let subtotal = 0;
       let totalDiscount = 0;
 
       // Validate and calculate totals
@@ -828,9 +959,9 @@ const resolvers = {
         if (!book) throw new Error(`Book ${item.bookId} not found`);
         if (book.stock < item.quantity) throw new Error(`Insufficient stock for ${book.title}`);
 
-        const price = book.price * item.quantity;
-        const discount = ((book.discount || 0) / 100) * price;
-        totalPrice += price;
+        const price = Number(book.price) * item.quantity;
+        const discount = (Number(book.discount || 0) / 100) * price;
+        subtotal += price;
         totalDiscount += discount;
 
         orderItems.push({
@@ -844,11 +975,26 @@ const resolvers = {
         await book.decrement('stock', { by: item.quantity });
       }
 
+      const amountAfterBookDiscount = Math.max(0, subtotal - totalDiscount);
+      const voucherResult = await calculateVoucherDiscount({
+        code: voucherCode,
+        subtotal: amountAfterBookDiscount,
+        userId: user.id
+      });
+      if (!voucherResult.valid) {
+        throw new Error(voucherResult.message);
+      }
+
+      const voucherDiscount = Number(voucherResult.discountAmount || 0);
+      const finalTotal = Number(voucherResult.finalAmount || amountAfterBookDiscount);
+
       const orderNumber = `ORD-${Date.now()}`;
       const order = await Order.create({
         userId: user.id,
         orderNumber,
-        totalPrice,
+        totalPrice: finalTotal,
+        voucherCode: voucherResult.voucher ? voucherResult.voucher.code : null,
+        voucherDiscount,
         totalDiscount,
         shippingAddress,
         paymentMethod,
@@ -856,6 +1002,16 @@ const resolvers = {
         customerEmail,
         customerPhone
       });
+
+      if (voucherResult.voucher) {
+        await VoucherUsage.create({
+          voucherId: voucherResult.voucher.id,
+          userId: user.id,
+          orderId: order.id,
+          discountAmount: voucherDiscount
+        });
+        await voucherResult.voucher.increment('usedCount');
+      }
 
       for (const item of orderItems) {
         await OrderItem.create({
@@ -874,6 +1030,7 @@ const resolvers = {
 
     updateOrderStatus: async (_, { id, status }, { user }) => {
       if (!user || user.role !== 'admin') throw new Error('Not authorized');
+      if (status === 'confirmed') throw new Error('Admin cannot set status to confirmed');
 
       const order = await Order.findByPk(id);
       if (!order) throw new Error('Order not found');
@@ -887,8 +1044,62 @@ const resolvers = {
       });
     },
 
-    cancelOrder: async (_, { id }, { user }) => {
+    confirmOrder: async (_, { id }, { user }) => {
       if (!user) throw new Error('Not authenticated');
+
+      const order = await Order.findByPk(id);
+      if (!order) throw new Error('Order not found');
+      if (order.userId !== user.id) throw new Error('Not authorized');
+      if (order.status !== 'delivered') throw new Error('Only delivered orders can be confirmed');
+
+      await order.update({ status: 'confirmed' });
+      return Order.findByPk(id, {
+        include: [
+          { model: User, attributes: { exclude: ['password'] } },
+          { model: OrderItem, include: [{ model: Book }] }
+        ]
+      });
+    },
+
+    createVoucher: async (_, args, { user }) => {
+      if (!user || user.role !== 'admin') throw new Error('Not authorized');
+      const code = args.code.trim().toUpperCase();
+      const exists = await Voucher.findOne({ where: { code } });
+      if (exists) throw new Error('Voucher code already exists');
+      const payload = {
+        ...args,
+        code,
+        minOrderValue: args.minOrderValue || 0,
+        perUserLimit: args.perUserLimit || 1,
+        isActive: typeof args.isActive === 'boolean' ? args.isActive : true
+      };
+      return Voucher.create(payload);
+    },
+
+    updateVoucher: async (_, { id, ...updates }, { user }) => {
+      if (!user || user.role !== 'admin') throw new Error('Not authorized');
+      const voucher = await Voucher.findByPk(id);
+      if (!voucher) throw new Error('Voucher not found');
+      await voucher.update(updates);
+      return voucher;
+    },
+
+    toggleVoucherStatus: async (_, { id }, { user }) => {
+      if (!user || user.role !== 'admin') throw new Error('Not authorized');
+      const voucher = await Voucher.findByPk(id);
+      if (!voucher) throw new Error('Voucher not found');
+      await voucher.update({ isActive: !voucher.isActive });
+      return voucher;
+    },
+
+    deleteVoucher: async (_, { id }, { user }) => {
+      if (!user || user.role !== 'admin') throw new Error('Not authorized');
+      await VoucherUsage.destroy({ where: { voucherId: id } });
+      await Voucher.destroy({ where: { id } });
+      return 'Voucher deleted successfully';
+    },
+
+    cancelOrder: async (_, { id }, { user }) => {
 
       const order = await Order.findByPk(id);
       if (!order) throw new Error('Order not found');
@@ -916,12 +1127,45 @@ const resolvers = {
           { model: OrderItem, include: [{ model: Book }] }
         ]
       });
+    },
+
+    // Favorite Mutations
+    addToFavorites: async (_, { bookId }, { user }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const book = await Book.findByPk(bookId);
+      if (!book) throw new Error('Book not found');
+
+      const [fav] = await Favorite.findOrCreate({
+        where: { userId: user.id, bookId },
+        defaults: { userId: user.id, bookId }
+      });
+
+      return Favorite.findByPk(fav.id, {
+        include: [
+          { model: User, attributes: { exclude: ['password'] } },
+          { model: Book, include: [{ model: Category }, { model: Author }] }
+        ]
+      });
+    },
+
+    removeFromFavorites: async (_, { bookId }, { user }) => {
+      if (!user) throw new Error('Not authenticated');
+
+      const deleted = await Favorite.destroy({
+        where: { userId: user.id, bookId }
+      });
+
+      if (deleted === 0) throw new Error('Favorite not found');
+      return 'Đã xóa khỏi danh sách yêu thích';
     }
   },
 
   // Field Resolvers
   User: {
-    fullName: (parent) => `${parent.firstName} ${parent.lastName}`
+    fullName: (parent) => `${parent.firstName} ${parent.lastName}`,
+    createdAt: (parent) => parent.createdAt instanceof Date ? parent.createdAt.toISOString() : (parent.createdAt ? String(parent.createdAt) : null),
+    updatedAt: (parent) => parent.updatedAt instanceof Date ? parent.updatedAt.toISOString() : (parent.updatedAt ? String(parent.updatedAt) : null)
   },
 
   Category: {
@@ -945,17 +1189,27 @@ const resolvers = {
 
   Review: {
     user: (parent) => parent.User || null,
-    book: (parent) => parent.Book || null
+    book: (parent) => parent.Book || null,
+    createdAt: (parent) => parent.createdAt instanceof Date ? parent.createdAt.toISOString() : (parent.createdAt ? String(parent.createdAt) : null),
+    updatedAt: (parent) => parent.updatedAt instanceof Date ? parent.updatedAt.toISOString() : (parent.updatedAt ? String(parent.updatedAt) : null)
   },
 
   Order: {
     user: (parent) => parent.User || null,
-    items: (parent) => parent.OrderItems || []
+    items: (parent) => parent.OrderItems || [],
+    createdAt: (parent) => parent.createdAt instanceof Date ? parent.createdAt.toISOString() : (parent.createdAt ? String(parent.createdAt) : null),
+    updatedAt: (parent) => parent.updatedAt instanceof Date ? parent.updatedAt.toISOString() : (parent.updatedAt ? String(parent.updatedAt) : null)
   },
 
   OrderItem: {
     book: (parent) => parent.Book || null,
     order: (parent) => parent.Order || null
+  },
+
+  Favorite: {
+    user: (parent) => parent.User || null,
+    book: (parent) => parent.Book || null,
+    createdAt: (parent) => parent.createdAt instanceof Date ? parent.createdAt.toISOString() : (parent.createdAt ? String(parent.createdAt) : null)
   }
 };
 

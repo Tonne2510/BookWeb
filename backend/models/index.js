@@ -5,6 +5,9 @@ const Book = require('../models/Book');
 const Review = require('../models/Review');
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
+const Favorite = require('../models/Favorite');
+const Voucher = require('../models/Voucher');
+const VoucherUsage = require('../models/VoucherUsage');
 
 // User associations
 User.hasMany(Review, { foreignKey: 'userId', onDelete: 'CASCADE' });
@@ -31,6 +34,20 @@ OrderItem.belongsTo(Order, { foreignKey: 'orderId' });
 OrderItem.belongsTo(Book, { foreignKey: 'bookId' });
 Book.hasMany(OrderItem, { foreignKey: 'bookId', onDelete: 'RESTRICT' });
 
+// Favorite associations
+User.hasMany(Favorite, { foreignKey: 'userId', onDelete: 'CASCADE' });
+Favorite.belongsTo(User, { foreignKey: 'userId' });
+Book.hasMany(Favorite, { foreignKey: 'bookId', onDelete: 'CASCADE' });
+Favorite.belongsTo(Book, { foreignKey: 'bookId' });
+
+// Voucher associations
+Voucher.hasMany(VoucherUsage, { foreignKey: 'voucherId', onDelete: 'CASCADE' });
+VoucherUsage.belongsTo(Voucher, { foreignKey: 'voucherId' });
+User.hasMany(VoucherUsage, { foreignKey: 'userId', onDelete: 'CASCADE' });
+VoucherUsage.belongsTo(User, { foreignKey: 'userId' });
+Order.hasOne(VoucherUsage, { foreignKey: 'orderId', onDelete: 'SET NULL' });
+VoucherUsage.belongsTo(Order, { foreignKey: 'orderId' });
+
 module.exports = {
   User,
   Category,
@@ -38,5 +55,8 @@ module.exports = {
   Book,
   Review,
   Order,
-  OrderItem
+  OrderItem,
+  Favorite,
+  Voucher,
+  VoucherUsage
 };

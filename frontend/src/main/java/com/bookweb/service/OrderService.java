@@ -225,6 +225,7 @@ public class OrderService {
                   orderNumber
                   totalPrice
                   status
+                  reviewed
                   user {
                     id
                     firstName
@@ -233,6 +234,7 @@ public class OrderService {
                   items {
                     quantity
                     book {
+                      id
                       title
                     }
                   }
@@ -273,6 +275,47 @@ public class OrderService {
         return orderList;
     }
 
+    public boolean hasUserPurchasedAndDelivered(String bookId, String token) {
+        try {
+            String query = """
+                query GetDeliveredOrders($page: Int, $limit: Int, $status: OrderStatus) {
+                  orders(page: $page, limit: $limit, status: $status) {
+                    orders {
+                      status
+                      items {
+                        book {
+                          id
+                        }
+                      }
+                    }
+                  }
+                }
+            """;
+            JsonObject variables = new JsonObject();
+            variables.addProperty("page", 1);
+            variables.addProperty("limit", 100);
+            variables.addProperty("status", "delivered");
+
+            JsonObject response = graphQLService.executeQuery(query, variables, token);
+            if (!response.has("data") || response.get("data").isJsonNull()) return false;
+
+            JsonArray orders = response.getAsJsonObject("data").getAsJsonObject("orders").getAsJsonArray("orders");
+            for (var orderEl : orders) {
+                JsonObject order = orderEl.getAsJsonObject();
+                if (order.has("items")) {
+                    for (var itemEl : order.getAsJsonArray("items")) {
+                        JsonObject item = itemEl.getAsJsonObject();
+                        if (item.has("book") && !item.get("book").isJsonNull()) {
+                            String id = item.getAsJsonObject("book").get("id").getAsString();
+                            if (bookId.equals(id)) return true;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     // Wrapper methods for admin use
     public List<OrderDTO> getAllOrders(String status, int page, int limit, String token) throws Exception {
         return getAllOrders(page, limit, status, token);
@@ -284,6 +327,50 @@ public class OrderService {
 
     public OrderDTO getOrderDetail(String id, String token) throws Exception {
         return getOrderById(id, token);
+    }
+
+    public void confirmOrder(String orderId, String token) throws Exception {
+        String mutation = """
+            mutation ConfirmOrder($id: ID!) {
+              confirmOrder(id: $id) {
+                id
+                status
+              }
+            }
+        """;
+        JsonObject variables = new JsonObject();
+        variables.addProperty("id", orderId);
+        JsonObject response = graphQLService.executeQuery(mutation, variables, token);
+        if (response.has("errors") && !response.get("errors").isJsonNull()) {
+            var errors = response.getAsJsonArray("errors");
+            if (errors.size() > 0) {
+                throw new Exception(errors.get(0).getAsJsonObject().get("message").getAsString());
+            }
+        }
+    }
+
+    public void submitOrderReview(String orderId, String bookId, int rating, String title, String content, String imageUrl, String token) throws Exception {
+        String mutation = """
+            mutation CreateReview($bookId: ID!, $rating: Int!, $title: String, $content: String!, $imageUrl: String, $orderId: ID) {
+              createReview(bookId: $bookId, rating: $rating, title: $title, content: $content, imageUrl: $imageUrl, orderId: $orderId) {
+                id
+              }
+            }
+        """;
+        JsonObject variables = new JsonObject();
+        variables.addProperty("bookId", bookId);
+        variables.addProperty("rating", rating);
+        if (title != null && !title.isBlank()) variables.addProperty("title", title);
+        variables.addProperty("content", content);
+        if (imageUrl != null && !imageUrl.isBlank()) variables.addProperty("imageUrl", imageUrl);
+        variables.addProperty("orderId", orderId);
+        JsonObject response = graphQLService.executeQuery(mutation, variables, token);
+        if (response.has("errors") && !response.get("errors").isJsonNull()) {
+            var errors = response.getAsJsonArray("errors");
+            if (errors.size() > 0) {
+                throw new Exception(errors.get(0).getAsJsonObject().get("message").getAsString());
+            }
+        }
     }
 
     /**
@@ -306,8 +393,8 @@ public class OrderService {
         itemsGQL.append("]");
 
         String mutation = """
-            mutation CreateOrder($items: [OrderItemInput!]!, $shippingAddress: String!, $paymentMethod: PaymentMethod!, $customerName: String, $customerEmail: String, $customerPhone: String) {
-              createOrder(items: $items, shippingAddress: $shippingAddress, paymentMethod: $paymentMethod, customerName: $customerName, customerEmail: $customerEmail, customerPhone: $customerPhone) {
+            mutation CreateOrder($items: [OrderItemInput!]!, $shippingAddress: String!, $paymentMethod: PaymentMethod!, $customerName: String, $customerEmail: String, $customerPhone: String, $voucherCode: String) {
+              createOrder(items: $items, shippingAddress: $shippingAddress, paymentMethod: $paymentMethod, customerName: $customerName, customerEmail: $customerEmail, customerPhone: $customerPhone, voucherCode: $voucherCode) {
                 id
                 orderNumber
                 totalPrice
@@ -332,6 +419,12 @@ public class OrderService {
         }
         if (orderData.containsKey("phone")) {
             variables.addProperty("customerPhone", (String) orderData.get("phone"));
+        }
+        if (orderData.containsKey("voucherCode") && orderData.get("voucherCode") != null) {
+          String voucherCode = (String) orderData.get("voucherCode");
+          if (!voucherCode.isBlank()) {
+            variables.addProperty("voucherCode", voucherCode);
+          }
         }
 
         try {

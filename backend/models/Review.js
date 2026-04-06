@@ -23,6 +23,10 @@ const Review = sequelize.define('Review', {
     type: DataTypes.TEXT,
     allowNull: false
   },
+  imageUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   helpfulCount: {
     type: DataTypes.INTEGER,
     defaultValue: 0

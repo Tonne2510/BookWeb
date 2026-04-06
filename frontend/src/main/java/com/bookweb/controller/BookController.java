@@ -8,6 +8,8 @@ import com.bookweb.service.BookService;
 import com.bookweb.service.ReviewService;
 import com.bookweb.service.CategoryService;
 import com.bookweb.service.AuthorService;
+import com.bookweb.service.FavoriteService;
+import com.bookweb.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,6 +35,12 @@ public class BookController {
 
     @Autowired
     private AuthorService authorService;
+
+    @Autowired
+    private FavoriteService favoriteService;
+
+    @Autowired
+    private OrderService orderService;
 
     @GetMapping
     public String listBooks(
@@ -80,7 +88,7 @@ public class BookController {
     }
 
     @GetMapping("/{slug}")
-    public String viewBook(@PathVariable String slug, Model model) {
+    public String viewBook(@PathVariable String slug, Model model, HttpSession session) {
         try {
             BookDTO book = bookService.getBookBySlug(slug);
             model.addAttribute("book", book);
@@ -95,6 +103,15 @@ public class BookController {
                 model.addAttribute("reviews", Collections.emptyList());
                 model.addAttribute("reviewCount", 0);
             }
+
+            // Check if this book is in user's favorites
+            String token = (String) session.getAttribute("token");
+            boolean isFavorite = favoriteService.isFavorite(book.getId(), token);
+            model.addAttribute("isFavorite", isFavorite);
+
+            // Check if user can review (must have purchased and received the book)
+            boolean canReview = token != null && orderService.hasUserPurchasedAndDelivered(book.getId(), token);
+            model.addAttribute("canReview", canReview);
 
             return "books/detail";
         } catch (Exception e) {

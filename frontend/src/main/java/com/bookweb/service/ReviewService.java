@@ -28,7 +28,9 @@ public class ReviewService {
                   rating
                   title
                   content
+                  imageUrl
                   helpfulCount
+                  createdAt
                   user {
                     firstName
                     lastName
@@ -158,6 +160,7 @@ public class ReviewService {
                 rating
                 title
                 content
+                imageUrl
                 status
                 user {
                   firstName

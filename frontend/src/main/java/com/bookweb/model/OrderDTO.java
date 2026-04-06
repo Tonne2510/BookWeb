@@ -18,11 +18,14 @@ public class OrderDTO {
     private String customerEmail;
     private String customerPhone;
     private Double totalPrice;
+    private String voucherCode;
+    private Double voucherDiscount;
     private Double totalDiscount;
     private String shippingAddress;
     private Double shippingCost;
     private String paymentMethod;
     private String status;
+    private boolean reviewed;
     private String notes;
     private UserDTO user;
     private List<OrderItemDTO> items;

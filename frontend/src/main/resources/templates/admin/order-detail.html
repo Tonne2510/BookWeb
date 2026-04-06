@@ -95,6 +95,7 @@
                                         <span th:case="'processing'" class="badge bg-info">Đang Xử Lý</span>
                                         <span th:case="'shipped'" class="badge bg-primary">Đang Giao</span>
                                         <span th:case="'delivered'" class="badge bg-success">Đã Giao</span>
+                                        <span th:case="'confirmed'" class="badge" style="background:#6f42c1;">Đã Xác Nhận</span>
                                         <span th:case="'cancelled'" class="badge bg-danger">Đã Hủy</span>
                                         <span th:case="*" class="badge bg-secondary" th:text="${order.status}"></span>
                                     </span>
@@ -166,38 +167,55 @@
                     <!-- Status Update -->
                     <div class="col-lg-4">
                         <div class="card shadow-sm">
-                            <div class="card-header bg-warning text-dark">
+                            <div th:if="${order.status == 'confirmed' or order.status == 'cancelled'}"
+                                 class="card-header text-white"
+                                 th:classappend="${order.status == 'confirmed'} ? 'bg-secondary' : 'bg-danger'">
+                                <h5 class="mb-0"><i class="fas fa-lock me-2"></i>Trạng Thái Đã Khóa</h5>
+                            </div>
+                            <div th:unless="${order.status == 'confirmed' or order.status == 'cancelled'}"
+                                 class="card-header bg-warning text-dark">
                                 <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Cập Nhật Trạng Thái</h5>
                             </div>
                             <div class="card-body">
-                                <form method="POST" th:action="@{/admin/orders/update-status/{id}(id=${order.id})}">
-                                    <div class="mb-3">
-                                        <label for="statusSelect" class="form-label">Chọn Trạng Thái Mới:</label>
-                                        <select class="form-select" id="statusSelect" name="status" required>
-                                            <option value="">-- Chọn Trạng Thái --</option>
-                                            <option value="pending" th:selected="${order.status == 'pending'}">Chưa Xử Lý</option>
-                                            <option value="processing" th:selected="${order.status == 'processing'}">Đang Xử Lý</option>
-                                            <option value="shipped" th:selected="${order.status == 'shipped'}">Đang Giao</option>
-                                            <option value="delivered" th:selected="${order.status == 'delivered'}">Đã Giao</option>
-                                            <option value="cancelled" th:selected="${order.status == 'cancelled'}">Đã Hủy</option>
-                                        </select>
+                                <!-- Locked state for confirmed/cancelled -->
+                                <div th:if="${order.status == 'confirmed'}" class="alert alert-secondary mb-0">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Đơn hàng đã được khách hàng xác nhận. Không thể thay đổi trạng thái.
+                                </div>
+                                <div th:if="${order.status == 'cancelled'}" class="alert alert-danger mb-0">
+                                    <i class="fas fa-times-circle me-2"></i>
+                                    Đơn hàng đã bị hủy. Không thể thay đổi trạng thái.
+                                </div>
+
+                                <!-- Update form for active orders -->
+                                <div th:unless="${order.status == 'confirmed' or order.status == 'cancelled'}">
+                                    <form method="POST" th:action="@{/admin/orders/update-status/{id}(id=${order.id})}">
+                                        <div class="mb-3">
+                                            <label for="statusSelect" class="form-label">Chọn Trạng Thái Mới:</label>
+                                            <select class="form-select" id="statusSelect" name="status" required>
+                                                <option value="">-- Chọn Trạng Thái --</option>
+                                                <option th:if="${order.status == 'pending'}" value="processing">Đang Xử Lý</option>
+                                                <option th:if="${order.status == 'processing'}" value="shipped">Đang Giao</option>
+                                                <option th:if="${order.status == 'shipped'}" value="delivered">Đã Giao</option>
+                                                <option value="cancelled">Đã Hủy</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-save me-2"></i>Cập Nhật Trạng Thái
+                                        </button>
+                                    </form>
+
+                                    <hr/>
+
+                                    <div class="alert alert-info">
+                                        <h6 class="alert-heading">Quy Trình Đơn Hàng:</h6>
+                                        <ul class="mb-0 small">
+                                            <li><strong>Chưa Xử Lý</strong> → Đang Xử Lý</li>
+                                            <li><strong>Đang Xử Lý</strong> → Đang Giao</li>
+                                            <li><strong>Đang Giao</strong> → Đã Giao</li>
+                                            <li><strong>Đã Hủy</strong> có thể chọn ở bất kỳ bước nào</li>
+                                        </ul>
                                     </div>
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-save me-2"></i>Cập Nhật Trạng Thái
-                                    </button>
-                                </form>
-
-                                <hr/>
-
-                                <div class="alert alert-info">
-                                    <h6 class="alert-heading">Quy Trình Đơn Hàng:</h6>
-                                    <ul class="mb-0 small">
-                                        <li><strong>Chưa Xử Lý:</strong> Đơn hàng vừa được tạo</li>
-                                        <li><strong>Đang Xử Lý:</strong> Nhân viên đang chuẩn bị hàng</li>
-                                        <li><strong>Đang Giao:</strong> Hàng đã được gửi đi</li>
-                                        <li><strong>Đã Giao:</strong> Khách hàng đã nhận hàng</li>
-                                        <li><strong>Đã Hủy:</strong> Đơn hàng bị hủy</li>
-                                    </ul>
                                 </div>
                             </div>
                         </div>

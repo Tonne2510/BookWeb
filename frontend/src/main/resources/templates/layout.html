@@ -307,6 +307,7 @@
                 </div>
                 <div th:if="${session.token != null}">
                     <a href="/auth/profile"><i class="fas fa-user-circle me-1"></i>Tài khoản</a>
+                    <a href="/auth/orders"><i class="fas fa-box me-1"></i>Đơn hàng</a>
                     <a href="/auth/logout"><i class="fas fa-sign-out-alt me-1"></i>Đăng xuất</a>
                 </div>
             </div>
@@ -341,6 +342,10 @@
                         <span th:if="${cartCount != null && cartCount > 0}" 
                               th:text="${cartCount}"
                               style="position: absolute; top: -8px; right: -10px; background: #ff6b6b; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center;"></span>
+                    </a>
+                    <a href="/favorites" class="header-link" style="position: relative;">
+                        <i class="fas fa-heart" style="color: #e74c3c;"></i>
+                        <span>Yêu thích</span>
                     </a>
                 </div>
             </div>

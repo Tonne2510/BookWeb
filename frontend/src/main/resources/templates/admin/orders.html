@@ -64,7 +64,14 @@
                                     <span th:case="'PROCESSING'" class="badge bg-info">Đang Xử Lý</span>
                                     <span th:case="'SHIPPED'" class="badge bg-primary">Đã Gửi</span>
                                     <span th:case="'DELIVERED'" class="badge bg-success">Đã Giao</span>
+                                    <span th:case="'CONFIRMED'" class="badge" style="background:#6f42c1;">Đã Xác Nhận</span>
                                     <span th:case="'CANCELLED'" class="badge bg-danger">Đã Hủy</span>
+                                    <span th:case="'pending'" class="badge bg-warning text-dark">Chưa Xử Lý</span>
+                                    <span th:case="'processing'" class="badge bg-info">Đang Xử Lý</span>
+                                    <span th:case="'shipped'" class="badge bg-primary">Đã Gửi</span>
+                                    <span th:case="'delivered'" class="badge bg-success">Đã Giao</span>
+                                    <span th:case="'confirmed'" class="badge" style="background:#6f42c1;">Đã Xác Nhận</span>
+                                    <span th:case="'cancelled'" class="badge bg-danger">Đã Hủy</span>
                                     <span th:case="*" class="badge bg-secondary" th:text="${order.status}"></span>
                                 </span>
                             </td>

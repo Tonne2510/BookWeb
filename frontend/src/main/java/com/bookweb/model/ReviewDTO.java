@@ -14,6 +14,7 @@ public class ReviewDTO {
     private Integer rating;
     private String title;
     private String content;
+    private String imageUrl;
     private Integer helpfulCount;
     private String status;
     private UserDTO user;

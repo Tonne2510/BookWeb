@@ -12,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/admin")
@@ -39,6 +41,9 @@ public class AdminController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private VoucherService voucherService;
 
     // Check if user is admin
     private void checkAdminAccess() throws Exception {
@@ -566,6 +571,11 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/reviews/delete/{id}")
+    public String deleteReviewGet(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        return deleteReview(id, redirectAttributes);
+    }
+
     @PostMapping("/reviews/approve/{id}")
     public String approveReview(@PathVariable String id, RedirectAttributes redirectAttributes) {
         try {
@@ -592,6 +602,90 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
             return "redirect:/admin/reviews";
         }
+    }
+
+    // ===== VOUCHER MANAGEMENT =====
+    @GetMapping("/vouchers")
+    public String manageVouchers(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "50") int limit,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        try {
+            checkAdminAccess();
+            String token = getTokenFromSession();
+            var vouchers = voucherService.getAllVouchers(page, limit, token);
+            model.addAttribute("vouchers", vouchers);
+            return "admin/vouchers-standalone";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/auth/login";
+        }
+    }
+
+    @PostMapping("/vouchers/create")
+    public String createVoucher(
+            @RequestParam String code,
+            @RequestParam String name,
+            @RequestParam(required = false) String description,
+            @RequestParam String type,
+            @RequestParam Double value,
+            @RequestParam(required = false, defaultValue = "0") Double minOrderValue,
+            @RequestParam(required = false) Double maxDiscount,
+            @RequestParam(required = false) Integer totalUsageLimit,
+            @RequestParam(required = false, defaultValue = "1") Integer perUserLimit,
+            @RequestParam String startDate,
+            @RequestParam String endDate,
+            RedirectAttributes redirectAttributes) {
+        try {
+            checkAdminAccess();
+            String token = getTokenFromSession();
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("code", code);
+            payload.put("name", name);
+            payload.put("description", description);
+            payload.put("type", type);
+            payload.put("value", value);
+            payload.put("minOrderValue", minOrderValue);
+            payload.put("maxDiscount", maxDiscount);
+            payload.put("totalUsageLimit", totalUsageLimit);
+            payload.put("perUserLimit", perUserLimit);
+            payload.put("startDate", startDate);
+            payload.put("endDate", endDate);
+
+            voucherService.createVoucher(payload, token);
+            redirectAttributes.addFlashAttribute("message", "Tạo voucher thành công");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/vouchers";
+    }
+
+    @PostMapping("/vouchers/toggle/{id}")
+    public String toggleVoucher(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        try {
+            checkAdminAccess();
+            String token = getTokenFromSession();
+            voucherService.toggleVoucherStatus(id, token);
+            redirectAttributes.addFlashAttribute("message", "Đã cập nhật trạng thái voucher");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/vouchers";
+    }
+
+    @PostMapping("/vouchers/delete/{id}")
+    public String deleteVoucher(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        try {
+            checkAdminAccess();
+            String token = getTokenFromSession();
+            voucherService.deleteVoucher(id, token);
+            redirectAttributes.addFlashAttribute("message", "Đã xóa voucher");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/vouchers";
     }
 
     // ===== USER MANAGEMENT =====

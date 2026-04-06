@@ -198,6 +198,12 @@
             background-color: #e0e0e0;
         }
 
+        .btn-secondary-large.active-favorite {
+            background-color: #ffe0e0;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
         .product-details {
             background: white;
             padding: 25px;
@@ -442,12 +448,12 @@
 
                         <!-- Rating -->
                         <div class="product-rating">
-                            <span class="stars">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star-half-alt"></i>
+                            <span class="stars" th:with="avgRating=${book.rating != null ? book.rating : 0}">
+                                <span th:each="i : ${#numbers.sequence(1, 5)}">
+                                    <i th:if="${avgRating >= i}" class="fas fa-star"></i>
+                                    <i th:if="${avgRating < i and avgRating >= i - 0.5}" class="fas fa-star-half-alt"></i>
+                                    <i th:if="${avgRating < i - 0.5}" class="far fa-star"></i>
+                                </span>
                             </span>
                             <span class="rating-value" th:text="${book.rating ?: '0'}">4.5</span>
                             <span style="color: #999;">(<span th:text="${reviewCount ?: 0}"></span> đánh giá)</span>
@@ -479,9 +485,12 @@
                                 <i class="fas fa-shopping-cart"></i>
                                 <span>Thêm vào giỏ</span>
                             </button>
-                            <button class="btn-large btn-secondary-large">
-                                <i class="fas fa-heart"></i>
-                                <span>Yêu thích</span>
+                            <button id="favoriteBtn"
+                                    class="btn-large btn-secondary-large"
+                                    th:classappend="${isFavorite} ? ' active-favorite'"
+                                    onclick="toggleFavorite()">
+                                <i id="favoriteIcon" th:class="${isFavorite} ? 'fas fa-heart' : 'far fa-heart'" style="color: #e74c3c;"></i>
+                                <span id="favoriteText" th:text="${isFavorite} ? 'Đã yêu thích' : 'Yêu thích'">Yêu thích</span>
                             </button>
                         </div>
 
@@ -542,10 +551,13 @@
                     </div>
                     <div class="review-rating">
                         <span th:each="i : ${#numbers.sequence(1, review.rating)}"><i class="fas fa-star"></i></span>
-                        <span th:each="i : ${#numbers.sequence(review.rating + 1, 5)}"><i class="far fa-star"></i></span>
                     </div>
                     <div th:if="${review.title}" class="review-title" th:text="${review.title}"></div>
                     <div class="review-content" th:text="${review.content}"></div>
+                    <div th:if="${review.imageUrl != null and !#strings.isEmpty(review.imageUrl)}" style="margin-top: 12px;">
+                        <img th:src="${review.imageUrl}" alt="Ảnh nhận xét"
+                             style="max-width: 220px; width: 100%; border-radius: 8px; border: 1px solid #e5e7eb; object-fit: cover;">
+                    </div>
                 </div>
                 <div th:if="${reviews == null || reviews.size() == 0}" style="text-align: center; padding: 30px; color: #999;">
                     <i class="fas fa-comments" style="font-size: 2em; margin-bottom: 10px; display: block;"></i>
@@ -553,38 +565,10 @@
                 </div>
             </div>
 
-            <!-- Review Form -->
-            <div th:if="${session.token}" class="review-form">
-                <h4>Viết Đánh Giá</h4>
-                <form th:action="'/books/' + ${book.id} + '/review'" method="post">
-                    <div class="form-group">
-                        <label>Đánh giá</label>
-                        <select name="rating" class="form-control" required>
-                            <option value="">Chọn số sao...</option>
-                            <option value="5">⭐⭐⭐⭐⭐ 5 sao - Tuyệt vời</option>
-                            <option value="4">⭐⭐⭐⭐ 4 sao - Rất tốt</option>
-                            <option value="3">⭐⭐⭐ 3 sao - Bình thường</option>
-                            <option value="2">⭐⭐ 2 sao - Chưa tốt</option>
-                            <option value="1">⭐ 1 sao - Tồi</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Tiêu đề đánh giá</label>
-                        <input type="text" name="title" class="form-control" placeholder="Tiêu đề đánh giá...">
-                    </div>
-                    <div class="form-group">
-                        <label>Nội dung đánh giá</label>
-                        <textarea name="content" class="form-control" rows="5" placeholder="Chia sẻ trải nghiệm của bạn..." required></textarea>
-                    </div>
-                    <button type="submit" class="btn-submit">
-                        <i class="fas fa-paper-plane me-2"></i>Gửi Đánh Giá
-                    </button>
-                </form>
-            </div>
-
-            <div th:if="!${session.token}" style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center;">
-                <i class="fas fa-lock me-2" style="color: #0066CC;"></i>
-                <a href="/auth/login" style="color: #0066CC; font-weight: 600; text-decoration: none;">Đăng nhập</a> để viết đánh giá
+            <!-- Review Notice -->
+            <div style="background: #f0f7ff; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center; border-left: 4px solid #0066CC;">
+                <i class="fas fa-info-circle me-2" style="color: #0066CC;"></i>
+                Để viết đánh giá, hãy vào <a href="/auth/orders" style="color:#0066CC;font-weight:600;">Đơn Hàng Của Tôi</a> sau khi nhận hàng.
             </div>
         </div>
     </div>
@@ -592,6 +576,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script th:inline="javascript">
         var isLoggedIn = /*[[${session.token != null}]]*/ false;
+        var bookId = /*[[${book.id}]]*/ '';
+        var isFavorite = /*[[${isFavorite}]]*/ false;
     </script>
     <script>
         function addToCart() {
@@ -601,7 +587,6 @@
                 }
                 return;
             }
-            var bookId = '[[${book.id}]]';
             var price = '[[${book.finalPrice}]]';
             var title = encodeURIComponent('[[${book.title}]]');
             var image = encodeURIComponent('[[${book.coverImage}]]');
@@ -615,6 +600,59 @@
                         alert('Lỗi: ' + (data.message || 'Không thể thêm vào giỏ'));
                     }
                 });
+        }
+
+        function toggleFavorite() {
+            if (!isLoggedIn) {
+                if (confirm('Bạn cần đăng nhập để lưu yêu thích. Chuyển đến trang đăng nhập?')) {
+                    window.location.href = '/auth/login';
+                }
+                return;
+            }
+            var btn = document.getElementById('favoriteBtn');
+            var icon = document.getElementById('favoriteIcon');
+            var text = document.getElementById('favoriteText');
+            btn.disabled = true;
+
+            fetch('/favorites/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'bookId=' + encodeURIComponent(bookId)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                btn.disabled = false;
+                if (data.success) {
+                    isFavorite = data.isFavorite;
+                    if (isFavorite) {
+                        icon.className = 'fas fa-heart';
+                        text.textContent = 'Đã yêu thích';
+                        btn.classList.add('active-favorite');
+                    } else {
+                        icon.className = 'far fa-heart';
+                        text.textContent = 'Yêu thích';
+                        btn.classList.remove('active-favorite');
+                    }
+                    showToast(data.message, isFavorite ? 'success' : 'info');
+                } else {
+                    showToast(data.message || 'Có lỗi xảy ra', 'error');
+                }
+            })
+            .catch(function() {
+                btn.disabled = false;
+                showToast('Có lỗi xảy ra, vui lòng thử lại', 'error');
+            });
+        }
+
+        function showToast(message, type) {
+            var toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;padding:12px 24px;border-radius:8px;color:#fff;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.2);transition:all 0.3s;';
+            if (type === 'success') toast.style.background = '#28a745';
+            else if (type === 'error') toast.style.background = '#dc3545';
+            else toast.style.background = '#17a2b8';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(function() { toast.style.opacity = '0'; setTimeout(function() { document.body.removeChild(toast); }, 300); }, 2500);
         }
     </script>
 </body>

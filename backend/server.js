@@ -16,6 +16,39 @@ dotenv.config();
 const app = express();
 app.set('trust proxy', 1);
 
+const ensureReviewImageColumn = async () => {
+  try {
+    await db.query('ALTER TABLE `Reviews` ADD COLUMN `imageUrl` VARCHAR(500) NULL');
+    console.log('✅ Added Reviews.imageUrl column');
+  } catch (error) {
+    // Ignore duplicate column errors for repeated startups
+    if (error && (error.original?.code === 'ER_DUP_FIELDNAME' || error.parent?.code === 'ER_DUP_FIELDNAME')) {
+      return;
+    }
+    throw error;
+  }
+};
+
+const ensureOrderVoucherColumns = async () => {
+  try {
+    await db.query('ALTER TABLE `Orders` ADD COLUMN `voucherCode` VARCHAR(255) NULL');
+    console.log('✅ Added Orders.voucherCode column');
+  } catch (error) {
+    if (!(error && (error.original?.code === 'ER_DUP_FIELDNAME' || error.parent?.code === 'ER_DUP_FIELDNAME'))) {
+      throw error;
+    }
+  }
+
+  try {
+    await db.query('ALTER TABLE `Orders` ADD COLUMN `voucherDiscount` DECIMAL(10,2) NOT NULL DEFAULT 0');
+    console.log('✅ Added Orders.voucherDiscount column');
+  } catch (error) {
+    if (!(error && (error.original?.code === 'ER_DUP_FIELDNAME' || error.parent?.code === 'ER_DUP_FIELDNAME'))) {
+      throw error;
+    }
+  }
+};
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:8080',
@@ -127,6 +160,12 @@ const startServer = async () => {
 db.authenticate()
   .then(() => {
     console.log('✅ Database connected successfully');
+    return ensureReviewImageColumn();
+  })
+  .then(() => {
+    return ensureOrderVoucherColumns();
+  })
+  .then(() => {
     return db.sync();
   })
   .then(() => {

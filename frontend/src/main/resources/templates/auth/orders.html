@@ -6,16 +6,20 @@
     <title>Đơn Hàng Của Tôi - BookWeb</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f8f9fa; }
+        .page-header { background: linear-gradient(135deg,#0066CC,#004999); color:#fff; padding:40px 0 30px; margin-bottom:30px; }
+        .order-table th { background:#343a40; color:#fff; font-weight:600; }
+        .badge-confirmed { background:#6f42c1; color:#fff; }
+        .action-btn { font-size:0.8rem; padding:4px 10px; border-radius:20px; margin:2px; }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">📚 BookWeb</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <a class="navbar-brand" href="/"><i class="fas fa-book me-1"></i>BookWeb</a>
+            <div class="collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="/">Trang Chủ</a></li>
                     <li class="nav-item"><a class="nav-link" href="/books">Sách</a></li>
@@ -26,8 +30,22 @@
         </div>
     </nav>
 
-    <div class="container py-5">
-        <h2 class="mb-4"><i class="fas fa-box me-2"></i>Đơn Hàng Của Tôi</h2>
+    <div class="page-header">
+        <div class="container">
+            <h2><i class="fas fa-box me-2"></i>Đơn Hàng Của Tôi</h2>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+
+        <div th:if="${message}" class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i><span th:text="${message}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
 
         <div th:if="${orders == null || orders.isEmpty()}" class="text-center py-5">
             <i class="fas fa-inbox" style="font-size: 4em; color: #ccc;"></i>
@@ -36,14 +54,15 @@
         </div>
 
         <div th:if="${orders != null && !orders.isEmpty()}" class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-dark">
+            <table class="table table-hover order-table">
+                <thead>
                     <tr>
                         <th>Mã Đơn</th>
                         <th>Sản Phẩm</th>
                         <th>Tổng Tiền</th>
                         <th>Trạng Thái</th>
                         <th>Ngày Đặt</th>
+                        <th>Hành Động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -57,15 +76,89 @@
                         </td>
                         <td style="color: #0066CC; font-weight: 700;" th:text="'₫' + ${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT')}">₫0</td>
                         <td>
-                            <span class="badge"
-                                  th:classappend="${order.status == 'pending' ? 'bg-warning text-dark' : (order.status == 'processing' ? 'bg-info' : (order.status == 'shipped' ? 'bg-primary' : (order.status == 'delivered' ? 'bg-success' : 'bg-danger')))}"
-                                  th:text="${order.status == 'pending' ? 'Chờ xử lý' : (order.status == 'processing' ? 'Đang xử lý' : (order.status == 'shipped' ? 'Đang giao' : (order.status == 'delivered' ? 'Đã giao' : 'Đã hủy')))}">
-                            </span>
+                            <span th:if="${order.status == 'pending'}" class="badge bg-warning text-dark">Chờ xử lý</span>
+                            <span th:if="${order.status == 'processing'}" class="badge bg-info">Đang xử lý</span>
+                            <span th:if="${order.status == 'shipped'}" class="badge bg-primary">Đang giao</span>
+                            <span th:if="${order.status == 'delivered'}" class="badge bg-success">Đã giao</span>
+                            <span th:if="${order.status == 'cancelled'}" class="badge bg-danger">Đã hủy</span>
+                            <span th:if="${order.status == 'confirmed'}" class="badge badge-confirmed"><i class="fas fa-check-double me-1"></i>Đã xác nhận</span>
                         </td>
                         <td th:text="${order.createdAt != null ? #strings.substring(order.createdAt, 0, 10) : '-'}">2024-01-01</td>
+                        <td>
+                            <!-- Delivered: show Xác Nhận + Đánh Giá -->
+                            <div th:if="${order.status == 'delivered'}">
+                                <form th:action="'/auth/orders/' + ${order.id} + '/confirm'" method="post" style="display:inline;">
+                                    <button type="submit" class="btn btn-outline-purple action-btn"
+                                            style="border-color:#6f42c1;color:#6f42c1;"
+                                            onclick="return confirm('Xác nhận đã nhận được hàng?')">
+                                        <i class="fas fa-check-double me-1"></i>Xác Nhận
+                                    </button>
+                                </form>
+                                <button class="btn btn-outline-warning action-btn"
+                                        th:attr="onclick='openReviewModal(\'' + ${order.id} + '\', \'' + ${order.items != null && !order.items.isEmpty() ? order.items[0].book.id : ''} + '\', \'' + ${order.items != null && !order.items.isEmpty() ? order.items[0].book.title : ''} + '\')'">
+                                    <i class="fas fa-star me-1"></i>Đánh Giá
+                                </button>
+                            </div>
+                            <!-- Confirmed but not yet reviewed: show Đánh Giá only -->
+                            <div th:if="${order.status == 'confirmed' and !order.reviewed}">
+                                <button class="btn btn-outline-warning action-btn"
+                                        th:attr="onclick='openReviewModal(\'' + ${order.id} + '\', \'' + ${order.items != null && !order.items.isEmpty() ? order.items[0].book.id : ''} + '\', \'' + ${order.items != null && !order.items.isEmpty() ? order.items[0].book.title : ''} + '\')'">
+                                    <i class="fas fa-star me-1"></i>Đánh Giá
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div class="modal fade" id="reviewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-star me-2"></i>Viết Đánh Giá</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="reviewForm" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">Sách: <strong id="reviewBookTitle"></strong></p>
+                        <input type="hidden" id="reviewBookId" name="bookId">
+                        <input type="hidden" id="reviewOrderId" name="orderId">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Đánh giá sao</label>
+                            <select name="rating" class="form-select" required>
+                                <option value="">Chọn số sao...</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 5 sao - Tuyệt vời</option>
+                                <option value="4">⭐⭐⭐⭐ 4 sao - Rất tốt</option>
+                                <option value="3">⭐⭐⭐ 3 sao - Bình thường</option>
+                                <option value="2">⭐⭐ 2 sao - Chưa tốt</option>
+                                <option value="1">⭐ 1 sao - Tồi</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tiêu đề đánh giá</label>
+                            <input type="text" name="title" class="form-control" placeholder="Tiêu đề đánh giá...">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nội dung đánh giá</label>
+                            <textarea name="content" class="form-control" rows="4" placeholder="Chia sẻ trải nghiệm của bạn..." required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ảnh thực tế (tùy chọn)</label>
+                            <input type="file" name="reviewImage" class="form-control" accept="image/*">
+                            <div class="form-text">Hỗ trợ ảnh JPG, PNG, WEBP.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-warning text-dark fw-bold">
+                            <i class="fas fa-paper-plane me-2"></i>Gửi Đánh Giá
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -77,5 +170,14 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openReviewModal(orderId, bookId, bookTitle) {
+            document.getElementById('reviewBookId').value = bookId;
+            document.getElementById('reviewOrderId').value = orderId;
+            document.getElementById('reviewBookTitle').textContent = bookTitle;
+            document.getElementById('reviewForm').action = '/auth/orders/' + orderId + '/review';
+            new bootstrap.Modal(document.getElementById('reviewModal')).show();
+        }
+    </script>
 </body>
 </html>

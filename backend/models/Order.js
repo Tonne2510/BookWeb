@@ -28,6 +28,15 @@ const Order = sequelize.define('Order', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false
   },
+  voucherCode: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  voucherDiscount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0
+  },
   totalDiscount: {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0
@@ -45,8 +54,12 @@ const Order = sequelize.define('Order', {
     allowNull: false
   },
   status: {
-    type: DataTypes.ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled'),
+    type: DataTypes.ENUM('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'confirmed'),
     defaultValue: 'pending'
+  },
+  reviewed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   notes: {
     type: DataTypes.TEXT,

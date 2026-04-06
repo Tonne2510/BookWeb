@@ -107,6 +107,9 @@
                             <span th:if="${order.status == 'delivered'}" class="status-badge status-delivered">
                                 <i class="fas fa-check-circle me-1"></i>Delivered
                             </span>
+                            <span th:if="${order.status == 'confirmed'}" class="status-badge" style="background:#e8d5ff;color:#6f42c1;">
+                                <i class="fas fa-check-double me-1"></i>Đã Xác Nhận
+                            </span>
                             <span th:if="${order.status == 'cancelled'}" class="status-badge status-cancelled">
                                 <i class="fas fa-times-circle me-1"></i>Cancelled
                             </span>
@@ -117,7 +120,7 @@
                                 <i class="fas fa-eye"></i> View
                             </a>
                             <form method="post" th:action="@{/admin/orders/cancel/{id}(id=${order.id})}" style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-warning action-btn" onclick="return confirm('Cancel this order?')" th:disabled="${order.status == 'delivered' or order.status == 'cancelled'}">
+                                <button type="submit" class="btn btn-sm btn-warning action-btn" onclick="return confirm('Cancel this order?')" th:disabled="${order.status == 'delivered' or order.status == 'confirmed' or order.status == 'cancelled'}">
                                     <i class="fas fa-ban"></i> Cancel
                                 </button>
                             </form>
