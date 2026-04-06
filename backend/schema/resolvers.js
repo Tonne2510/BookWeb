@@ -491,12 +491,27 @@ const resolvers = {
         order: [['createdAt', 'DESC']]
       });
 
+      const seenIds = new Set();
       const vouchers = [];
       for (const recipient of recipients) {
         const voucher = recipient.Voucher;
+        seenIds.add(String(voucher.id));
         const usable = await isVoucherUsable({ voucher, userId: user.id, subtotal });
         if (usable) vouchers.push(voucher);
       }
+
+      // Also include vouchers directly assigned to this user via userId field
+      const directVouchers = await Voucher.findAll({
+        where: { distributionType: 'gift', isActive: true, userId: user.id }
+      });
+      for (const voucher of directVouchers) {
+        if (!seenIds.has(String(voucher.id))) {
+          seenIds.add(String(voucher.id));
+          const usable = await isVoucherUsable({ voucher, userId: user.id, subtotal });
+          if (usable) vouchers.push(voucher);
+        }
+      }
+
       return vouchers;
     },
 

@@ -146,6 +146,29 @@ const ensureVoucherGiftColumns = async () => {
   }
 };
 
+const ensureOrderStatusConfirmed = async () => {
+  try {
+    await db.query(
+      "ALTER TABLE `Orders` MODIFY COLUMN `status` ENUM('pending','processing','shipped','delivered','cancelled','confirmed') NOT NULL DEFAULT 'pending'",
+    );
+    console.log("✅ Orders.status ENUM updated with confirmed");
+  } catch (error) {
+    // Ignore if already contains enum value (some DB versions throw ER_DUP_KEYNAME or similar)
+    if (
+      error &&
+      (error.original?.code === "ER_DUP_FIELDNAME" ||
+        error.parent?.code === "ER_DUP_FIELDNAME")
+    ) {
+      return;
+    }
+    // If enum already has 'confirmed', MySQL may not error — safe to ignore
+    // Only rethrow if it's actually a different kind of error
+    const msg = (error.original?.message || error.message || "").toLowerCase();
+    if (msg.includes("confirmed")) return; // already has the value
+    throw error;
+  }
+};
+
 const ensureVoucherRecipientsTable = async () => {
   await db.query(`
     CREATE TABLE IF NOT EXISTS \`VoucherRecipients\` (
@@ -325,6 +348,9 @@ db.authenticate()
   })
   .then(() => {
     return ensureVoucherRecipientsTable();
+  })
+  .then(() => {
+    return ensureOrderStatusConfirmed();
   })
   .then(() => {
     startServer();
