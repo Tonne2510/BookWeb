@@ -7,5 +7,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class BookWebApplication {
     public static void main(String[] args) {
         SpringApplication.run(BookWebApplication.class, args);
+        System.setProperty("spring.thymeleaf.cache", "false");
     }
 }
