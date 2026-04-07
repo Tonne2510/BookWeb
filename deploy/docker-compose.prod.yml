@@ -67,6 +67,7 @@ services:
     restart: always
     environment:
       GRAPHQL_ENDPOINT: http://backend:4000/graphql
+      BACKEND_BASE_URL: http://backend:4000
       SPRING_PROFILES_ACTIVE: prod
       JAVA_OPTS: "-Xmx512m -Xms256m"
     deploy:

@@ -287,14 +287,14 @@
                 submitBtn.innerHTML =
                   '<i class="fas fa-spinner fa-spin me-2"></i>Đang kết nối MoMo...';
 
-                const response = await fetch(
-                  "http://localhost:4000/api/momo/create-payment",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ amount: amount }),
-                  },
-                );
+                const response = await fetch("/cart/api/momo/create-payment", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    amount: amount,
+                    redirectUrl: window.location.origin + "/cart/momo-return",
+                  }),
+                });
 
                 const data = await response.json();
                 if (data.payUrl) {
@@ -311,7 +311,7 @@
               } catch (error) {
                 console.error(error);
                 alert(
-                  "Lỗi kết nối tới Server MoMo (Port 4000)! Hãy chắc chắn bạn đã chạy 'npm start' ở backend.",
+                  error.message || "Lỗi kết nối tới dịch vụ MoMo. Vui lòng thử lại.",
                 );
                 const submitBtn = document.querySelector(
                   'button[type="submit"]',
