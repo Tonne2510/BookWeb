@@ -235,6 +235,68 @@ const ensureVoucherRecipientsTable = async () => {
   `);
 };
 
+const ensureVoucherRecipientsUniqueKey = async () => {
+  try {
+    await db.query(
+      "ALTER TABLE `VoucherRecipients` ADD UNIQUE KEY `voucher_recipients_unique` (`voucherId`, `userId`)",
+    );
+  } catch (error) {
+    if (
+      !(
+        error &&
+        (error.original?.code === "ER_DUP_KEYNAME" ||
+          error.parent?.code === "ER_DUP_KEYNAME" ||
+          error.original?.code === "ER_DUP_ENTRY" ||
+          error.parent?.code === "ER_DUP_ENTRY")
+      )
+    ) {
+      throw error;
+    }
+  }
+};
+
+const ensureVoucherValidityNormalized = async () => {
+  await db.query(
+    "UPDATE `Vouchers` SET `startDate` = CONCAT(DATE(`startDate`), ' 00:00:00') WHERE TIME(`startDate`) <> '00:00:00'",
+  );
+  await db.query(
+    "UPDATE `Vouchers` SET `endDate` = CONCAT(DATE(`endDate`), ' 23:59:59') WHERE TIME(`endDate`) <> '23:59:59'",
+  );
+};
+
+const ensureConfirmedOrderGiftVoucherRecipients = async () => {
+  await db.query(`
+    INSERT INTO \`VoucherRecipients\` (\`id\`, \`source\`, \`createdAt\`, \`updatedAt\`, \`voucherId\`, \`userId\`)
+    SELECT UUID(), 'amount', NOW(), NOW(), v.id, o.userId
+    FROM \`Orders\` o
+    INNER JOIN \`Vouchers\` v
+      ON v.distributionType = 'gift'
+      AND v.giftConditionType = 'amount'
+      AND v.giftedBySystem = 0
+      AND v.userId IS NULL
+      AND v.isActive = 1
+    LEFT JOIN \`VoucherRecipients\` vr
+      ON vr.voucherId = v.id
+      AND vr.userId = o.userId
+    WHERE o.status = 'confirmed'
+      AND o.totalPrice >= IFNULL(v.minGiftAmount, 0)
+      AND (v.maxGiftAmount IS NULL OR o.totalPrice <= v.maxGiftAmount)
+      AND v.startDate <= NOW()
+      AND v.endDate >= NOW()
+      AND vr.id IS NULL
+  `);
+
+  await db.query(`
+    UPDATE \`Vouchers\` v
+    SET \`giftedCount\` = (
+      SELECT COUNT(*)
+      FROM \`VoucherRecipients\` vr
+      WHERE vr.voucherId = v.id
+    )
+    WHERE v.distributionType = 'gift'
+  `);
+};
+
 // Middleware
 app.use(
   cors({
@@ -407,7 +469,16 @@ db.authenticate()
     return ensureVoucherRecipientsTable();
   })
   .then(() => {
+    return ensureVoucherRecipientsUniqueKey();
+  })
+  .then(() => {
     return ensureOrderStatusConfirmed();
+  })
+  .then(() => {
+    return ensureVoucherValidityNormalized();
+  })
+  .then(() => {
+    return ensureConfirmedOrderGiftVoucherRecipients();
   })
   .then(() => {
     startServer();
