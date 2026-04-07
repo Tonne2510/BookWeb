@@ -44,7 +44,7 @@
     async function startMoMoPayment() {
       const retryBtn = document.getElementById("retryBtn");
       try {
-        const response = await fetch("/api/momo/create-payment", {
+        const response = await fetch("/cart/api/momo/create-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
