@@ -29,10 +29,10 @@ const createMoMoPayment = async (req, res) => {
   try {
     const amount = Number(req.body.amount) || 50000;
 
-    // Bộ KEY test của MoMo (Chuẩn 100%)
-    const partnerCode = "MOMOBKUN20180529";
-    const accessKey = "klm05TvNBzhg7h7j";
-    const secretKey = "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa";
+    // Bộ KEY test của MoMo (sandbox)
+    const partnerCode = "MOMO";
+    const accessKey = "F8BBA842ECF85";
+    const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
 
     const orderInfo = "Thanh toan don hang BookWeb";
     const redirectUrl = req.body.redirectUrl || "http://localhost:8080/cart/momo-return";
@@ -74,11 +74,10 @@ const createMoMoPayment = async (req, res) => {
       res.status(400).json({ message: "MoMo từ chối tạo link. (Xem log)" });
     }
   } catch (error) {
-    console.error(
-      "Lỗi sập Server MoMo:",
-      error.response ? error.response.data : error.message,
-    );
-    res.status(500).json({ message: "Máy chủ MoMo đang bị lỗi Test! Vui lòng thử lại sau ít phút." });
+    const momoErr = error.response ? error.response.data : null;
+    console.error("Lỗi MoMo:", momoErr || error.message);
+    const msg = momoErr?.message || momoErr?.localMessage || error.message || "Không thể kết nối MoMo.";
+    res.status(500).json({ message: msg });
   }
 };
 
