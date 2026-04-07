@@ -39,8 +39,11 @@ const createMoMoPayment = async (req, res) => {
     const ipnUrl = "https://webhook.site/b3088a6a-2d1f-48bb-b1be-1a525f2b86ab";
     const requestType = "captureWallet";
     const extraData = "";
-    const orderId = req.body.orderId || (partnerCode + new Date().getTime());
-    const requestId = `${orderId}-${Date.now()}`;
+
+    // Xóa dấu gạch ngang khỏi orderId để MoMo sandbox chấp nhận
+    const rawOrderId = req.body.orderId || "";
+    const orderId = (rawOrderId ? rawOrderId.replace(/-/g, "") : (partnerCode + Date.now())).substring(0, 50);
+    const requestId = (partnerCode + Date.now()).substring(0, 50);
 
     // Mã hóa chữ ký
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
