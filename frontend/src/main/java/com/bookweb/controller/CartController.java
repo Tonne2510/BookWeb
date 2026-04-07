@@ -12,7 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.core.env.Environment;
 import java.util.*;
+import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Controller
 @RequestMapping("/cart")
@@ -31,6 +35,12 @@ public class CartController {
 
     @Autowired
     private VoucherService voucherService;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Autowired
+    private Environment environment;
 
     /**
      * View shopping cart
@@ -529,5 +539,33 @@ public class CartController {
         cartService.clearCart(session);
         clearAppliedVoucherSession(session);
         return realOrderId;
+    }
+
+    /**
+     * Proxy MoMo payment creation request to backend Node.js
+     */
+    @PostMapping("/api/momo/create-payment")
+    @ResponseBody
+    public ResponseEntity<?> createMoMoPaymentProxy(@RequestBody Map<String, Object> request) {
+        try {
+            String backendUrl = environment.getProperty("backend.base-url");
+            if (backendUrl == null) {
+                backendUrl = "http://localhost:4000";
+            }
+            
+            String momoUrl = backendUrl + "/api/momo/create-payment";
+            Map<String, Object> response = restTemplate.postForObject(
+                    momoUrl,
+                    request,
+                    Map.class
+            );
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "message", "Lỗi tạo link MoMo: " + e.getMessage()
+            ));
+        }
     }
 }
