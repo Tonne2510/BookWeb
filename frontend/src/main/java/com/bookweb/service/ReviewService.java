@@ -101,6 +101,7 @@ public class ReviewService {
                   rating
                   title
                   content
+                  imageUrl
                   status
                   helpfulCount
                   user {
@@ -113,6 +114,7 @@ public class ReviewService {
                     id
                     title
                     slug
+                    coverImage
                   }
                   createdAt
                 }

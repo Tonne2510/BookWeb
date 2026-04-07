@@ -106,11 +106,23 @@ public class BookController {
 
             // Check if this book is in user's favorites
             String token = (String) session.getAttribute("token");
-            boolean isFavorite = favoriteService.isFavorite(book.getId(), token);
+            boolean isFavorite = false;
+            try {
+                isFavorite = favoriteService.isFavorite(book.getId(), token);
+            } catch (Exception ignored) {
+                isFavorite = false;
+            }
             model.addAttribute("isFavorite", isFavorite);
 
             // Check if user can review (must have purchased and received the book)
-            boolean canReview = token != null && orderService.hasUserPurchasedAndDelivered(book.getId(), token);
+            boolean canReview = false;
+            if (token != null) {
+                try {
+                    canReview = orderService.hasUserPurchasedAndDelivered(book.getId(), token);
+                } catch (Exception ignored) {
+                    canReview = false;
+                }
+            }
             model.addAttribute("canReview", canReview);
 
             return "books/detail";

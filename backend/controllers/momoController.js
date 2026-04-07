@@ -1,22 +1,48 @@
 const crypto = require("crypto");
 const axios = require("axios");
 
+const MOMO_ENDPOINT = "https://test-payment.momo.vn/v2/gateway/api/create";
+const MOMO_TIMEOUT_MS = Number(process.env.MOMO_TIMEOUT_MS || 8000);
+const MOMO_MAX_ATTEMPTS = Number(process.env.MOMO_MAX_ATTEMPTS || 1);
+const MOMO_RETURN_PATH = "/cart/momo-return";
+const DEFAULT_MOMO_IPN_URL = "https://webhook.site/b3088a6a-2d1f-48bb-b1be-1a525f2b86ab";
+
+const isLocalUrl = (url = "") => /localhost|127\.0\.0\.1/i.test(url);
+
+const getPublicFrontendBaseUrl = () => {
+  const configured = (process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  const firstPublicOrigin = configured.find((origin) => !isLocalUrl(origin));
+  return firstPublicOrigin || "https://bookwebt.online";
+};
+
+const buildMomoIpnUrl = () => {
+  const configuredIpn = (process.env.MOMO_IPN_URL || "").trim();
+  if (configuredIpn) {
+    return configuredIpn;
+  }
+
+  return DEFAULT_MOMO_IPN_URL;
+};
+
 const createGatewayRequest = async (requestBody) => {
-  const endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
   let lastError;
 
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
+  for (let attempt = 1; attempt <= MOMO_MAX_ATTEMPTS; attempt += 1) {
     try {
-      const response = await axios.post(endpoint, requestBody, {
+      const response = await axios.post(MOMO_ENDPOINT, requestBody, {
         headers: { "Content-Type": "application/json" },
-        timeout: 15000,
+        timeout: MOMO_TIMEOUT_MS,
       });
       return response;
     } catch (error) {
       lastError = error;
-      // Retry only for network/timeout/5xx gateway errors
       const status = error.response?.status;
-      if (!(status >= 500 || error.code === "ECONNABORTED" || !status) || attempt === 2) {
+      const shouldRetry = status >= 500 || error.code === "ECONNABORTED" || !status;
+      if (!shouldRetry || attempt === MOMO_MAX_ATTEMPTS) {
         throw lastError;
       }
     }
@@ -35,8 +61,10 @@ const createMoMoPayment = async (req, res) => {
     const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
 
     const orderInfo = "Thanh toan don hang BookWeb";
-    const redirectUrl = req.body.redirectUrl || "http://localhost:8080/cart/momo-return";
-    const ipnUrl = "https://webhook.site/b3088a6a-2d1f-48bb-b1be-1a525f2b86ab";
+    const fallbackReturnUrl = `${getPublicFrontendBaseUrl()}${MOMO_RETURN_PATH}`;
+    const requestedRedirectUrl = (req.body.redirectUrl || "").trim();
+    const redirectUrl = requestedRedirectUrl || fallbackReturnUrl;
+    const ipnUrl = buildMomoIpnUrl();
     const requestType = "captureWallet";
     const extraData = "";
 
@@ -84,4 +112,13 @@ const createMoMoPayment = async (req, res) => {
   }
 };
 
-module.exports = { createMoMoPayment };
+const handleMoMoIpn = async (req, res) => {
+  try {
+    // Acknowledge MoMo callback quickly to prevent payment status failures.
+    return res.status(204).send();
+  } catch (error) {
+    return res.status(204).send();
+  }
+};
+
+module.exports = { createMoMoPayment, handleMoMoIpn };
