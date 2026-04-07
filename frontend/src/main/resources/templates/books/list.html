@@ -593,7 +593,13 @@
                                             <span class="final-price" th:text="'₫' + ${#numbers.formatInteger(book.finalPrice, 0)}">Price</span>
                                             <span class="original-price" th:if="${book.discount > 0}" th:text="'₫' + ${#numbers.formatInteger(book.price, 0)}">Original</span>
                                         </div>
-                                        <button type="button" class="btn-add" th:data-book-id="${book.id}" onclick="addToCart(this)">
+                                        <button type="button"
+                                                class="btn-add"
+                                                th:data-book-id="${book.id}"
+                                                th:data-price="${book.finalPrice}"
+                                                th:data-title="${book.title}"
+                                                th:data-image="${book.coverImage}"
+                                                onclick="addToCart(event, this)">
                                             <i class="fas fa-shopping-cart me-1"></i>Mua
                                         </button>
                                     </div>
@@ -674,7 +680,11 @@
             }
         }
 
-        function addToCart(btn) {
+        function addToCart(event, btn) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             if (!isLoggedIn) {
                 if (confirm('Bạn cần đăng nhập để thêm vào giỏ hàng. Chuyển đến trang đăng nhập?')) {
                     window.location.href = '/auth/login';
@@ -682,11 +692,14 @@
                 return;
             }
             var bookId = btn.getAttribute('data-book-id');
+            var price = btn.getAttribute('data-price') || '0';
+            var title = encodeURIComponent(btn.getAttribute('data-title') || '');
+            var image = encodeURIComponent(btn.getAttribute('data-image') || '');
             if (!bookId) {
                 alert('Không thể thêm sản phẩm này.');
                 return;
             }
-            fetch('/cart/add/' + bookId + '/1/0', { method: 'POST' })
+            fetch('/cart/add/' + bookId + '/1/' + price + '?title=' + title + '&coverImage=' + image, { method: 'POST' })
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data.success) {

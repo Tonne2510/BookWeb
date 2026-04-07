@@ -30,11 +30,11 @@
                                 <tr th:each="item : ${cartItems}">
                                     <td>
                                         <div style="display:flex; gap:10px; align-items:center;">
-                                            <img th:src="${item.coverImage != null and !item.coverImage.isEmpty()} ? ${item.coverImage} : 'https://via.placeholder.com/50x70?text=No+Image'"
+                                            <img th:src="${(item.coverImage != null and !item.coverImage.isEmpty()) ? item.coverImage : 'https://via.placeholder.com/50x70?text=No+Image'}"
                                                  style="width:50px; height:70px; object-fit:cover; border-radius:4px; background:#f0f0f0;"
                                                  onerror="this.src='https://via.placeholder.com/50x70?text=No+Image'">
                                             <div>
-                                                <h6 th:text="${item.title}"></h6>
+                                                <h6 th:text="${item.title != null and !item.title.isEmpty() ? item.title : 'Sách không xác định'}"></h6>
                                             </div>
                                         </div>
                                     </td>
@@ -107,7 +107,7 @@
                                     <span th:text="${appliedVoucherValidation.voucher.type == 'percent' ? (#numbers.formatDecimal(appliedVoucherValidation.voucher.value,1,0) + '%') : ('VND ' + #numbers.formatInteger(appliedVoucherValidation.voucher.value, 0))}"></span>
                                 </div>
                                 <div class="small"><strong>Đơn tối thiểu:</strong>
-                                    <span th:text="'VND ' + ${#numbers.formatInteger(appliedVoucherValidation.voucher.minOrderValue ?: 0, 0)}"></span>
+                                    <span th:text="'VND ' + ${#numbers.formatInteger(appliedVoucherValidation.voucher.minOrderValue != null ? appliedVoucherValidation.voucher.minOrderValue : 0, 0)}"></span>
                                 </div>
                                 <div class="small"><strong>HSD:</strong>
                                     <span th:text="${appliedVoucherValidation.voucher.endDate != null ? #strings.substring(appliedVoucherValidation.voucher.endDate,0,10) : 'Không giới hạn'}"></span>
