@@ -713,8 +713,8 @@ public class AdminController {
             if (maxGiftReviewCount != null) {
                 payload.put("maxGiftReviewCount", maxGiftReviewCount);
             }
-            payload.put("startDate", startDate);
-            payload.put("endDate", endDate);
+            payload.put("startDate", normalizeVoucherStartDate(startDate));
+            payload.put("endDate", normalizeVoucherEndDate(endDate));
 
             voucherService.createVoucher(payload, token);
             redirectAttributes.addFlashAttribute("message", "Tạo voucher thành công");
@@ -722,6 +722,34 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/vouchers";
+    }
+
+    private String normalizeVoucherStartDate(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return trimmed + "T00:00:00";
+        }
+        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}")) {
+            return trimmed + ":00";
+        }
+        return trimmed;
+    }
+
+    private String normalizeVoucherEndDate(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return trimmed + "T23:59:59";
+        }
+        if (trimmed.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}")) {
+            return trimmed + ":59";
+        }
+        return trimmed;
     }
 
     @PostMapping("/vouchers/toggle/{id}")
